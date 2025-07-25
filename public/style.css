@@ -1,0 +1,39 @@
+a {
+    color: #e74c3c;
+}
+
+.padding-container {
+    padding-top: 30px;
+    padding-bottom: 30px;
+
+}
+
+footer {
+    background-color: #f74c3c;
+    padding-top: 150px;
+    padding-bottom: 30px;
+    color: #fff;
+}
+
+footer a {
+    color: #fff;
+}
+
+.custom-card {
+    width: 300px !important;
+    margin: 0 auto;
+}
+
+.button-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+
+
+@media (min-width: 992px) {
+    .custom-card {
+        width: 900px !important;
+    }
+}
+

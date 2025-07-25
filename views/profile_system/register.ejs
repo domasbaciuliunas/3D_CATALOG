@@ -1,0 +1,71 @@
+<html lang="en">
+<%- include('../partials/head.ejs') %>
+
+    <body> 
+        <section class="container padding-container">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="name">Įveskite savo vardą:</label>
+                    <input type="text" class="form-control" name="name" id="name" tabindex="1">
+                    <%if (errors && errors.includes("name")) { %>
+                        <span style="color:red">Vardo laukelis yra netinkamas</span>
+                        <% } %>
+                </div>
+
+                <div class="mb-3">
+                    <label for="surname">Įveskite savo pavardę:</label>
+                    <input type="text" class="form-control" name="surname" id="surname" tabindex="2">
+                    <%if (errors && errors.includes("surname")) { %>
+                        <span style="color:red">Pavardės laukelis yra netinkamas</span>
+                        <% } %>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email">Įveskite savo elektroninį paštą:</label>
+                    <input type="email" class="form-control" name="email" id="email" tabindex="3">
+                    <%if (errors && errors.includes("email_inv")) { %>
+                        <span style="color:red">Elektroninio pašto laukelis yra netinkamas</span>
+                        <% } %>
+                    <%if (errors && errors.includes("email_ex")) { %>
+                        <span style="color:red">Šis elektroninis paštas jau egzistuoja</span>
+                        <% } %>
+                </div class="mb-3">
+
+                <div class="mb-3">
+                    <label for="password">Įveskite saugų slaptažodį:</label>
+                    <input type="password" class="form-control" name="password" id="password" tabindex="4">
+                    <%if (errors && errors.includes("password")) { %>
+                        <span style="color:red">Slaptažodžio laukelis yra netinkamas</span>
+                        <% } %>
+                </div>
+
+                <div class="mb-3">
+                    <label for="bday">Įveskite savo gimtadienį:</label>
+                    <input type="date" class="form-control" name="bday" id="bday" tabindex="5">
+                    <%if (errors && errors.includes("birthday")) { %>
+                        <span style="color:red">Gimtadienio laukelis yra netinkamas</span>
+                        <% } %>
+                </div>
+
+                <div class="mb-3">
+                    <label for="countries">Pasirinkite šalį:</label>
+                    <select name="countries" class="form-control" id="countries">
+                        <% for(let country of countries) { %>
+                            <option value="<%= country["COUNTRY_ID"]%>"> <%=country["COUNTRY"]%></option>  
+                                <% } %>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <input type="submit" class="form-control btn btn-dark" value="Submit" tabindex="6">
+                </div>
+            </form>
+
+            <blockquote cite="/">
+            <p>Jau turi paskyrą? <a href="/">Prisijunk</a></p>
+            </blockquote>
+        </section>
+
+        
+    </body>
+    <%- include('../partials/footer.ejs') %>

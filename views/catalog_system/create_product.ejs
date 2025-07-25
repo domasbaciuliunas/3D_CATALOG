@@ -1,0 +1,282 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<section id="main_section" class="container padding-container">
+  <div id="settings" class="mb-3">
+    <h2>Nustatymai:</h2>
+  </div>
+  <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'>
+  </div>
+  <form method="POST">
+    <div class="dropdown mb-3">
+      <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+        Pridėti elementą
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+        <li id="spotlight"><a class="dropdown-item">Prožektorius</a></li>
+        <li id="ambient"><a class="dropdown-item">Supanti šviesa</a></li>
+      </ul>
+    </div>
+
+    <div class="mb-3">
+      <label for="models">Pasirinkite modelį:</label>
+      <select name="models" class="form-control" id="models">
+        <option value="" selected disabled hidden>Pasirinkite modelį</option>
+        <% for(let model of models) { %>
+        <option value="<%= model["GLB_ID"]%>"> <%=model["NAME"]%></option>
+        <% } %>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="name">Produkto pavadinimas:</label>
+      <input type="text" class="form-control" id="name" name="name">
+      <%if (errors && errors.includes("name_inv")) { %>
+      <span style="color:red">Produkto pavadinimo laukelis yra netinkamas</span>
+      <% } %>
+    </div>
+
+    <div class="mb-3">
+      <label for="description">Aprašymas:</label>
+      <textarea id="description" class="form-control" name="description" style="resize: none;"></textarea>
+      <%if (errors && errors.includes("description_inv")) { %>
+      <span style="color:red">Aprašymo laukelis yra netinkamas</span>
+      <% } %>
+    </div>
+
+    <div class="mb-3">
+      <label for="price">Produkto Kaina:</label>
+      <input type="number" class="form-control" id="price" name="price">
+      <%if (errors && errors.includes("price_inv")) { %>
+      <span style="color:red">Kaina yra netinkama</span>
+      <% } %>
+    </div>
+
+    <div>
+      <input type="submit" value="Pateikti" class="form-control btn btn-dark">
+    </div>
+  </form>
+</section>
+<script type="module" src="/3D_scripts/Editor.js"></script>
+<script src="/masonry/masonry.pkgd.min.js"></script>
+<script type="module">
+  import { BasicEditor } from '/3D_scripts/Editor.js';
+  import {Pane} from '/tweakpane/tweakpane.js';
+
+  let price = document.getElementById("price");
+  price.addEventListener("input", function() {
+    if (price.value < 0) {
+      price.value = 0;
+    }
+  });
+
+  //editor
+  let editor = new BasicEditor(500, 'main_section', {
+    x: 0,
+    y: 0,
+    z: 30
+  }, 10, 30);
+  editor.resize();
+  editor.animate();
+
+  //Default size params
+  const OBJECT_SCALE_MAX = 20;
+  const OBJECT_SCALE_MIN = 0;
+  const DEFAULT_SCALE = 5;
+
+  //add a size tweaking pane;
+  const select = document.getElementById('models');
+  const PARAMS = {
+    Dydis: DEFAULT_SCALE
+  };
+  let size_pane = new Pane({
+    container: document.getElementById('settings')
+  });
+  size_pane.addBinding(PARAMS, 'Dydis', {
+    min: OBJECT_SCALE_MIN,
+    max: OBJECT_SCALE_MAX,
+  }).on('change', (ev) => {
+    editor.change_size(ev["value"]);
+  });
+  size_pane.hidden = true;
+
+  //event listener to add model on change
+  select.addEventListener("change", async (listing) => {
+    editor.remove_GLB()
+    editor.add_GLB("/GLB_FILES/", listing.target.value, DEFAULT_SCALE, () => {
+      size_pane.hidden = false;
+      PARAMS.Dydis = DEFAULT_SCALE;
+      size_pane.refresh();
+    });
+  })
+
+  //masonry code
+  let masonry;
+  window.addEventListener('load', () => {
+    const grid = document.querySelector('#settings_row');
+    masonry = new Masonry(grid, {
+      itemSelector: '.col-12',
+      percentPosition: true,
+    });
+  });
+
+  //Ambient light functionality
+  let ambient_element_count = 0;
+  let ambient_button = document.getElementById("ambient");
+  ambient_button.addEventListener("click", () => {
+    ambient_element_count++;
+    let id = crypto.randomUUID();
+    let settings = document.getElementById("settings_row");
+    let column = document.createElement("div");
+    column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3";
+    const pane = new Pane({
+      container: column
+    });
+    const PARAMS = {
+      Spalva: {
+        r: 1,
+        g: 1,
+        b: 1
+      },
+    };
+    const folder = pane.addFolder({
+      title: `Supanti_šviesa_${ambient_element_count}`,
+      expanded: true,
+    });
+    folder.on('fold', () => {
+      setTimeout(() => {
+        masonry.layout();
+      }, 200);
+    });
+    folder.addBlade({
+      view: 'slider',
+      label: 'Stiprumas',
+      min: 0,
+      max: 20,
+      value: 1,
+    }).on('change', (ev) => {
+      editor.change_ambient_light_intensity(ev.value, id);
+    })
+    folder.addBinding(PARAMS, 'Spalva', {
+      color: {
+        type: 'float'
+      },
+    }).on('change', (ev) => {
+      editor.change_ambient_light_color(ev.value, id);
+    })
+    const btn = pane.addButton({
+      title: 'Ištrinti',
+      label: 'Veiksmas',
+    }).on('click', () => {
+      ambient_element_count--;
+      editor.remove_ambient_light(id);
+      pane.dispose();
+      column.remove();
+      masonry.remove(column);
+      masonry.layout();
+    })
+    editor.add_ambient_light("white", 10, id)
+    settings.appendChild(column);
+    masonry.appended(column);
+    masonry.layout();
+  })
+  //Spotlight functionality
+  let Spotlight_element_count = 0;
+  let spotlight_button = document.getElementById("spotlight");
+  spotlight_button.addEventListener("click", () => {
+    Spotlight_element_count++;
+    let id = crypto.randomUUID();
+    let settings = document.getElementById("settings_row");
+    let column = document.createElement("div");
+    column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3 ";
+    const pane = new Pane({
+      container: column
+    })
+    const PARAMS = {
+      Spalva: {
+        r: 1,
+        g: 1,
+        b: 1
+      },
+      Koordinatės: {
+        x: 0,
+        y: 10,
+        z: 0
+      },
+    };
+    const folder = pane.addFolder({
+      title: `Prožektorius_${Spotlight_element_count}`,
+      expanded: true,
+    });
+    folder.on('fold', () => {
+      setTimeout(() => {
+        masonry.layout();
+      }, 200);
+    });
+    folder.addBlade({
+      view: 'slider',
+      label: 'Stiprumas',
+      min: 0,
+      max: 3000,
+      value: 1000,
+    }).on('change', (ev) => {
+      editor.change_spotlight_intensity(ev.value, id);
+    });
+    folder.addBinding(PARAMS, 'Spalva', {
+      color: {
+        type: 'float'
+      },
+    }).on('change', (ev) => {
+      editor.change_spotlight_color(ev.value, id);
+    });
+    folder.addBinding(PARAMS, 'Koordinatės').on('change', (ev) => {
+      editor.change_spotlight_coordinates(ev.value, id);
+    });
+    folder.addBlade({
+      view: 'slider',
+      label: 'Atstumas',
+      min: 0,
+      max: 100,
+      value: 0,
+    }).on('change', (ev) => {
+      editor.change_spotlight_distance(ev.value, id);
+    });
+    folder.addBlade({
+      view: 'slider',
+      label: 'Penumbra',
+      min: 0,
+      max: 1,
+      value: 0,
+    }).on('change', (ev) => {
+      editor.change_spotlight_penumbra(ev.value, id);
+    });
+    folder.addBlade({
+      view: 'slider',
+      label: 'Kampas',
+      min: 0,
+      max: 90,
+      value: 90,
+    }).on('change', (ev) => {
+      editor.change_spotlight_angle(ev.value, id);
+    });
+    const btn = pane.addButton({
+      title: 'Ištrinti',
+      label: 'Veiksmas',
+    }).on('click', () => {
+      Spotlight_element_count--;
+      editor.remove_spotlight(id);
+      pane.dispose();
+      column.remove();
+      masonry.remove(column);
+      masonry.layout();
+    })
+    editor.add_spotlight("white", 1000, 0, Math.PI / 2, 0, {
+      x: 0,
+      y: 10,
+      z: 0
+    }, id);
+    settings.appendChild(column);
+    masonry.appended(column);
+    masonry.layout();
+  })
+</script>
+<%- include('../partials/footer.ejs') %>

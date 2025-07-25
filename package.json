@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "bcryptjs": "^3.0.0",
+    "body-parser": "^1.20.3",
+    "bootstrap": "^5.3.6",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-mysql-session": "^3.0.3",
+    "express-session": "^1.18.1",
+    "mariadb": "^3.4.0",
+    "masonry-layout": "^4.2.2",
+    "method-override": "^3.0.0",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.2",
+    "tweakpane": "^4.0.5",
+    "validator": "^13.12.0"
+  }
+}
