@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 let loader = new GLTFLoader();
 
 class spotLight {
@@ -47,9 +48,16 @@ class GLB_model {
   constructor(path, name, y_scale, scene, callback) {
     loader.load((path + name), (glb) => {
       this.glb_scene = glb.scene;
+      this.glb_scene.traverse((child) => {
+        if (child.isMesh && !this.mainMeshSet) {
+          child.name = "MAIN_MODEL";
+          this.mainMeshSet = true;
+        }
+      });
       let box = new THREE.Box3().setFromObject(this.glb_scene);
       this.size = box.getSize(new THREE.Vector3());
-      this.y_scalar = y_scale / this.size["y"]; 
+      this.y_scalar = y_scale / this.size["y"];
+      this.original_scale = this.y_scalar;
       this.glb_scene.scale.set(this.y_scalar, this.y_scalar, this.y_scalar);
       this.glb_scene.position.set(0, 0, 0);
       this.glb_scene.traverse((child) => {
@@ -59,12 +67,16 @@ class GLB_model {
         }
       });
       scene.add(this.glb_scene);
+      if (typeof callback === 'function') callback(this.glb_scene);
     });
-    callback();
+  }
+
+  get_original_scale() {
+    return this.original_scale;
   }
 
   change_size(desired_scale) {
-     this.glb_scene.scale.set(desired_scale / this.size["y"], desired_scale / this.size["y"], desired_scale / this.size["y"]);
+    this.glb_scene.scale.set(desired_scale / this.size["y"], desired_scale / this.size["y"], desired_scale / this.size["y"]);
   }
 
   get_size() {
@@ -75,21 +87,77 @@ class GLB_model {
     scene.remove(this.glb_scene);
   }
 }
+
+class Pointer_Event {
+  constructor(renderer, scene, camera) {
+    this.renderer = renderer;
+    this.scene = scene;
+    this.camera = camera;
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2();
+    this.coordinates = null;
+    this._listener = null;  // Store listener function to allow removal
+  }
+
+  calculate_position(event, callback) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+    if (intersects.length > 0) {
+      const obj = intersects[0].object;
+      if (obj.name === "MAIN_MODEL") {
+        intersects[0].point.x = Math.round((intersects[0].point.x + Number.EPSILON) * 100) / 100
+        intersects[0].point.y = Math.round((intersects[0].point.y + Number.EPSILON) * 100) / 100
+        intersects[0].point.z = Math.round((intersects[0].point.z + Number.EPSILON) * 100) / 100
+        this.coordinates = intersects[0].point;
+        // Call the callback function to notify the event
+        if (typeof callback === 'function') {
+          callback(this.coordinates);
+        }
+      }
+    }
+    // Remove the event listener only after the click has been processed
+    this.renderer.domElement.removeEventListener('click', this._listener);
+  }
+
+  pointer_event(callback) {
+    // Remove the previous listener if it exists
+    if (this._listener) {
+      this.renderer.domElement.removeEventListener('click', this._listener);
+    }
+
+    // Store the new listener function for future removal
+    this._listener = (event) => this.calculate_position(event, callback);
+    this.renderer.domElement.addEventListener('click', this._listener);
+  }
+
+  get_event_coordinates() {
+    return this.coordinates;
+  }
+
+  removeEventListener() {
+    this.renderer.domElement.removeEventListener('click', this._listener);
+  }
+}
+
 class Editor {
   constructor(view_height, section_id, camera_position, min_zoom, max_zoom) {
     //spotlight and ambient light arrays
     this.spotlights = {};
     this.ambientLights = {};
+    this.interest_points = {};
     this.glb_model;
 
     this.view_height = view_height;
     this.scene = new THREE.Scene();
 
     //loads the textures
-    const textureLoader = new THREE.TextureLoader();
-    const left_arrow = textureLoader.load('/images/textures/icons8-arrow-left.png');
-    const right_arrow = textureLoader.load('/images/textures/icons8-arrow-right.png');
-    const question_mark = textureLoader.load('/images/textures/icons8-question-50.png');
+    this.textureLoader = new THREE.TextureLoader();
+    const left_arrow = this.textureLoader.load('/images/textures/icons8-arrow-left.png');
+    const right_arrow = this.textureLoader.load('/images/textures/icons8-arrow-right.png');
 
     //adds arrows to the scene
     this.arrow_r = new THREE.Sprite(new THREE.SpriteMaterial({ map: right_arrow }));
@@ -165,14 +233,40 @@ class Editor {
   }
 
   remove_GLB() {
-    if (this.glb_model) {this.glb_model.remove_glb(this.scene)};
+    if (this.glb_model) { this.glb_model.remove_glb(this.scene) };
   }
 }
 
 class BasicEditor extends Editor {
+  constructor(view_height, section_id, camera_position, min_zoom, max_zoom) {
+    super(view_height, section_id, camera_position, min_zoom, max_zoom);
+    this.cubeTextureLoader = new THREE.CubeTextureLoader();
+
+    //adds a pointer event object for the scene
+    this.pointer_event = new Pointer_Event(this.renderer, this.scene, this.camera);
+  }
+
   //method to change the size of the GLB
   change_size(size) {
+    let old_size = this.get_size().clone();;
     this.glb_model.change_size(size);
+    let refrence_size = this.get_size();
+    let original_scale = this.glb_model.get_original_scale();
+
+    //calculated_scale
+    let calculated_scale = (refrence_size.y / original_scale) - (refrence_size.y / original_scale) * 0.3;
+
+    //scales the interest points according to size
+    for (let key in this.interest_points) {
+
+      let x_equation = (refrence_size["x"] * this.interest_points[key].position["x"]) / old_size["x"];
+      let y_equation = (refrence_size["y"] * this.interest_points[key].position["y"]) / old_size["y"];
+      let z_equation = (refrence_size["z"] * this.interest_points[key].position["z"]) / old_size["z"];
+
+      this.interest_points[key].scale.set(calculated_scale, calculated_scale, 1);
+
+      this.interest_points[key].position.set(x_equation, y_equation, z_equation);
+    }
   }
 
   get_size() {
@@ -260,6 +354,113 @@ class BasicEditor extends Editor {
   //get ambient lights arrays
   get_ambient_lights() {
     return this.ambientLights;
+  }
+
+  //returns the pointer event and creates an interest_point
+  Create_interestPoint(_id, onClickCallback, state) {
+    this.pointer_event.pointer_event((coordinates) => {
+      if (coordinates) {
+        // Remove existing point if present
+        if (this.interest_points[_id]) {
+          let existing = this.interest_points[_id];
+          this.scene.remove(existing);
+          existing.material.dispose();
+          this.interest_points[_id] = null;
+        }
+
+        // Create and add new interest point
+        const question_mark_white = this.textureLoader.load('/images/textures/icons8-question-50.png');
+        const question_mark_black = this.textureLoader.load('/images/textures/icons8-question-50black.png');
+
+        const white_material = new THREE.SpriteMaterial({ map: question_mark_white });
+        const black_material = new THREE.SpriteMaterial({ map: question_mark_black });
+
+        let interest_point;
+        if (state === false) {  interest_point = new THREE.Sprite(white_material); }
+        else if (state === true) {  interest_point = new THREE.Sprite(black_material); }
+
+        let refrence_size = this.get_size();
+        let original_scale = this.glb_model.get_original_scale();
+
+        //calculated_scale
+        let calculated_scale = (refrence_size.y / original_scale) - (refrence_size.y / original_scale) * 0.3;
+        interest_point.scale.set(calculated_scale, calculated_scale, 1);
+
+        interest_point.position.copy(coordinates);
+        this.scene.add(interest_point);
+        this.interest_points[_id] = interest_point;
+
+        if (typeof onClickCallback === 'function') {
+          onClickCallback(coordinates);
+        }
+      }
+    });
+  }
+
+  //function to delete an interest point
+  Delete_InterestPoint(id) {
+    this.pointer_event.removeEventListener();
+    let sprite = this.interest_points[id]
+    if (sprite) {
+      this.scene.remove(sprite);
+      sprite.material.dispose();
+      sprite = null;
+    }
+  }
+
+  //return the interest point
+  get_InterestPoint(key) {
+    return this.interest_points[key];
+  }
+
+  change_arrow_color(color) {
+    const left_arrow = this.textureLoader.load('/images/textures/icons8-sort-left-48black.png');
+    const right_arrow = this.textureLoader.load('/images/textures/icons8-sort-right-48black.png');
+    let black_material_right = new THREE.SpriteMaterial({ map: right_arrow });
+    let black_material_left = new THREE.SpriteMaterial({ map: left_arrow });
+    const left_arrow_white = this.textureLoader.load('/images/textures/icons8-arrow-left.png');
+    const right_arrow_white = this.textureLoader.load('/images/textures/icons8-arrow-right.png')
+    let white_material_right = new THREE.SpriteMaterial({ map: right_arrow_white });
+    let white_material_left = new THREE.SpriteMaterial({ map: left_arrow_white });
+    if (color === "black") {
+      this.arrow_r.material = black_material_right;
+      this.arrow_l.material = black_material_left;
+    }
+    else if (color === "white") {
+      this.arrow_r.material = white_material_right;
+      this.arrow_l.material = white_material_left;
+    }
+  }
+
+  change_interestpoint_color(color) {
+    const question_mark_white = this.textureLoader.load('/images/textures/icons8-question-50.png');
+    const question_mark_black = this.textureLoader.load('/images/textures/icons8-question-50black.png');
+    let white_material = new THREE.SpriteMaterial({ map: question_mark_white });
+    let black_material = new THREE.SpriteMaterial({ map: question_mark_black });
+
+    if (color === "black") {
+      for (let key in this.interest_points) {
+        this.interest_points[key].material = black_material;
+      }
+    }
+    else if (color == "white") {
+      for (let key in this.interest_points) {
+        this.interest_points[key].material = white_material;
+      }
+    }
+  }
+  //changes the background path and sets background
+  change_background(path) {
+    this.cubeTextureLoader.setPath(`/images/cubemaps/${path}/`);
+    const backgroundCubemap = this.cubeTextureLoader.load([
+      '_px.png',
+      '_nx.png',
+      '_py.png',
+      '_ny.png',
+      '_pz.png',
+      '_nz.png'
+    ]);
+    this.scene.background = backgroundCubemap;
   }
 }
 

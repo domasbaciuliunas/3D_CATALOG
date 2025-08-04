@@ -17,8 +17,9 @@ const create_product = async (req, res) => {
     req.session.errors = null;
     let models = await general_func.retrieve_query(`SELECT NAME, GLB_ID FROM models INNER JOIN users_models ON
          models.ID = users_models.MODEL_ID WHERE users_models.USER_ID = ?`, [req.session.ID]);
+    let cubemap = await general_func.retrieve_query('SELECT * FROM cubemaps');
     await req.session.save();
-    res.render('catalog_system/create_product', { title: 'Create Product', errors: errors, models: models });
+    res.render('catalog_system/create_product', { title: 'Create Product', errors: errors, models: models, cubemaps: cubemap });
 }
 //function to upload a model
 const upload_model = async (req, res) => {

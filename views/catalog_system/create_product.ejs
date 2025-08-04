@@ -3,8 +3,14 @@
 <section id="main_section" class="container padding-container">
   <div id="settings" class="mb-3">
     <h2>Nustatymai:</h2>
+    <input type="checkbox" id="arrow_color" name="arrow_color" value="arrow_color" style="display: inline-block;">
+    <label for="arrow_color">Tamsios rodyklės</label><br>
+    <input type="checkbox" id="ip_color" name="ip_color" value="ip_color" style="display: inline-block;">
+    <label for="ip_color">Tamsūs dėmesio taškai</label><br>
   </div>
-  <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'>
+  <div id="editor_window" class="mb-3">
+    <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'></div>
+  </div>
   </div>
   <form method="POST">
     <div class="dropdown mb-3">
@@ -14,6 +20,7 @@
       <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
         <li id="spotlight"><a class="dropdown-item">Prožektorius</a></li>
         <li id="ambient"><a class="dropdown-item">Supanti šviesa</a></li>
+        <li id="interest_point"><a class="dropdown-item">Dėmesio taškas</a></li>
       </ul>
     </div>
 
@@ -23,6 +30,16 @@
         <option value="" selected disabled hidden>Pasirinkite modelį</option>
         <% for(let model of models) { %>
         <option value="<%= model["GLB_ID"]%>"> <%=model["NAME"]%></option>
+        <% } %>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="background">Pasirinkite foną:</label>
+      <select name="background" class="form-control" id="background">
+        <option value="" selected disabled hidden>Pasirinkite foną</option>
+        <% for(let cubemap of cubemaps) { %>
+        <option value="<%=cubemap["id"]%>"> <%=cubemap["cubemap_folder"]%></option>
         <% } %>
       </select>
     </div>
@@ -59,13 +76,46 @@
 <script type="module" src="/3D_scripts/Editor.js"></script>
 <script src="/masonry/masonry.pkgd.min.js"></script>
 <script type="module">
-  import { BasicEditor } from '/3D_scripts/Editor.js';
-  import {Pane} from '/tweakpane/tweakpane.js';
+  import {
+    BasicEditor
+  } from '/3D_scripts/Editor.js';
+  import {
+    Pane
+  } from '/tweakpane/tweakpane.js';
 
   let price = document.getElementById("price");
   price.addEventListener("input", function() {
     if (price.value < 0) {
       price.value = 0;
+    }
+  });
+
+  let ip_color_state = false;
+  //code to change the background
+  let background = document.getElementById("background");
+  background.addEventListener("change", (listing) => {
+    editor.change_background(listing.target.options[listing.target.selectedIndex].text);
+  })
+
+  //code to change the color of the arrows
+  let arrow_checkbox = document.getElementById("arrow_color");
+  arrow_checkbox.addEventListener('change', function() {
+    if (this.checked) {
+      editor.change_arrow_color("black");
+    } else {
+      editor.change_arrow_color("white");
+    }
+  })
+
+  //code to change the color of the interest points
+  let ip_color = document.getElementById("ip_color");
+  ip_color.addEventListener("change", function() {
+    if (this.checked) {
+      ip_color_state = true;
+      editor.change_interestpoint_color("black");
+    } else {
+      ip_color_state = false;
+      editor.change_interestpoint_color("white");
     }
   });
 
@@ -77,10 +127,14 @@
   }, 10, 30);
   editor.resize();
   editor.animate();
+  editor.change_background("black");
+
+  const MAX_TWEAKPANES = 15;
+  let TWEAKPANE_AMOUNT = 0;
 
   //Default size params
   const OBJECT_SCALE_MAX = 20;
-  const OBJECT_SCALE_MIN = 0;
+  const OBJECT_SCALE_MIN = 1;
   const DEFAULT_SCALE = 5;
 
   //add a size tweaking pane;
@@ -123,160 +177,246 @@
   let ambient_element_count = 0;
   let ambient_button = document.getElementById("ambient");
   ambient_button.addEventListener("click", () => {
-    ambient_element_count++;
-    let id = crypto.randomUUID();
-    let settings = document.getElementById("settings_row");
-    let column = document.createElement("div");
-    column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3";
-    const pane = new Pane({
-      container: column
-    });
-    const PARAMS = {
-      Spalva: {
-        r: 1,
-        g: 1,
-        b: 1
-      },
-    };
-    const folder = pane.addFolder({
-      title: `Supanti_šviesa_${ambient_element_count}`,
-      expanded: true,
-    });
-    folder.on('fold', () => {
-      setTimeout(() => {
+    if (TWEAKPANE_AMOUNT < MAX_TWEAKPANES) {
+      ambient_element_count++;
+      TWEAKPANE_AMOUNT++;
+      let id = crypto.randomUUID();
+      let settings = document.getElementById("settings_row");
+      let column = document.createElement("div");
+      column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3";
+      const pane = new Pane({
+        container: column
+      });
+      const PARAMS = {
+        Spalva: {
+          r: 1,
+          g: 1,
+          b: 1
+        },
+      };
+      const folder = pane.addFolder({
+        title: `Supanti_šviesa_${ambient_element_count}`,
+        expanded: true,
+      });
+      folder.on('fold', () => {
+        setTimeout(() => {
+          masonry.layout();
+        }, 200);
+      });
+      folder.addBlade({
+        view: 'slider',
+        label: 'Stiprumas',
+        min: 0,
+        max: 20,
+        value: 1,
+      }).on('change', (ev) => {
+        editor.change_ambient_light_intensity(ev.value, id);
+      })
+      folder.addBinding(PARAMS, 'Spalva', {
+        color: {
+          type: 'float'
+        },
+      }).on('change', (ev) => {
+        editor.change_ambient_light_color(ev.value, id);
+      })
+      const btn = pane.addButton({
+        title: 'Ištrinti',
+        label: 'Veiksmas',
+      }).on('click', () => {
+        ambient_element_count--;
+        TWEAKPANE_AMOUNT--;
+        editor.remove_ambient_light(id);
+        pane.dispose();
+        column.remove();
+        masonry.remove(column);
         masonry.layout();
-      }, 200);
-    });
-    folder.addBlade({
-      view: 'slider',
-      label: 'Stiprumas',
-      min: 0,
-      max: 20,
-      value: 1,
-    }).on('change', (ev) => {
-      editor.change_ambient_light_intensity(ev.value, id);
-    })
-    folder.addBinding(PARAMS, 'Spalva', {
-      color: {
-        type: 'float'
-      },
-    }).on('change', (ev) => {
-      editor.change_ambient_light_color(ev.value, id);
-    })
-    const btn = pane.addButton({
-      title: 'Ištrinti',
-      label: 'Veiksmas',
-    }).on('click', () => {
-      ambient_element_count--;
-      editor.remove_ambient_light(id);
-      pane.dispose();
-      column.remove();
-      masonry.remove(column);
+      })
+      editor.add_ambient_light("white", 10, id)
+      settings.appendChild(column);
+      masonry.appended(column);
       masonry.layout();
-    })
-    editor.add_ambient_light("white", 10, id)
-    settings.appendChild(column);
-    masonry.appended(column);
-    masonry.layout();
+    }
   })
+
   //Spotlight functionality
   let Spotlight_element_count = 0;
   let spotlight_button = document.getElementById("spotlight");
   spotlight_button.addEventListener("click", () => {
-    Spotlight_element_count++;
-    let id = crypto.randomUUID();
-    let settings = document.getElementById("settings_row");
-    let column = document.createElement("div");
-    column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3 ";
-    const pane = new Pane({
-      container: column
-    })
-    const PARAMS = {
-      Spalva: {
-        r: 1,
-        g: 1,
-        b: 1
-      },
-      Koordinatės: {
+    if (TWEAKPANE_AMOUNT < MAX_TWEAKPANES) {
+      Spotlight_element_count++;
+      TWEAKPANE_AMOUNT++;
+      let id = crypto.randomUUID();
+      let settings = document.getElementById("settings_row");
+      let column = document.createElement("div");
+      column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3 ";
+      const pane = new Pane({
+        container: column
+      })
+      const PARAMS = {
+        Spalva: {
+          r: 1,
+          g: 1,
+          b: 1
+        },
+        Koordinatės: {
+          x: 0,
+          y: 10,
+          z: 0
+        },
+      };
+      const folder = pane.addFolder({
+        title: `Prožektorius_${Spotlight_element_count}`,
+        expanded: true,
+      });
+      folder.on('fold', () => {
+        setTimeout(() => {
+          masonry.layout();
+        }, 200);
+      });
+      folder.addBlade({
+        view: 'slider',
+        label: 'Stiprumas',
+        min: 0,
+        max: 3000,
+        value: 1000,
+      }).on('change', (ev) => {
+        editor.change_spotlight_intensity(ev.value, id);
+      });
+      folder.addBinding(PARAMS, 'Spalva', {
+        color: {
+          type: 'float'
+        },
+      }).on('change', (ev) => {
+        editor.change_spotlight_color(ev.value, id);
+      });
+      folder.addBinding(PARAMS, 'Koordinatės').on('change', (ev) => {
+        editor.change_spotlight_coordinates(ev.value, id);
+      });
+      folder.addBlade({
+        view: 'slider',
+        label: 'Atstumas',
+        min: 0,
+        max: 100,
+        value: 0,
+      }).on('change', (ev) => {
+        editor.change_spotlight_distance(ev.value, id);
+      });
+      folder.addBlade({
+        view: 'slider',
+        label: 'Penumbra',
+        min: 0,
+        max: 1,
+        value: 0,
+      }).on('change', (ev) => {
+        editor.change_spotlight_penumbra(ev.value, id);
+      });
+      folder.addBlade({
+        view: 'slider',
+        label: 'Kampas',
+        min: 0,
+        max: 90,
+        value: 90,
+      }).on('change', (ev) => {
+        editor.change_spotlight_angle(ev.value, id);
+      });
+      const btn = pane.addButton({
+        title: 'Ištrinti',
+        label: 'Veiksmas',
+      }).on('click', () => {
+        Spotlight_element_count--;
+        TWEAKPANE_AMOUNT--;
+        editor.remove_spotlight(id);
+        pane.dispose();
+        column.remove();
+        masonry.remove(column);
+        masonry.layout();
+      })
+      editor.add_spotlight("white", 1000, 0, Math.PI / 2, 0, {
         x: 0,
         y: 10,
         z: 0
-      },
-    };
-    const folder = pane.addFolder({
-      title: `Prožektorius_${Spotlight_element_count}`,
-      expanded: true,
-    });
-    folder.on('fold', () => {
-      setTimeout(() => {
-        masonry.layout();
-      }, 200);
-    });
-    folder.addBlade({
-      view: 'slider',
-      label: 'Stiprumas',
-      min: 0,
-      max: 3000,
-      value: 1000,
-    }).on('change', (ev) => {
-      editor.change_spotlight_intensity(ev.value, id);
-    });
-    folder.addBinding(PARAMS, 'Spalva', {
-      color: {
-        type: 'float'
-      },
-    }).on('change', (ev) => {
-      editor.change_spotlight_color(ev.value, id);
-    });
-    folder.addBinding(PARAMS, 'Koordinatės').on('change', (ev) => {
-      editor.change_spotlight_coordinates(ev.value, id);
-    });
-    folder.addBlade({
-      view: 'slider',
-      label: 'Atstumas',
-      min: 0,
-      max: 100,
-      value: 0,
-    }).on('change', (ev) => {
-      editor.change_spotlight_distance(ev.value, id);
-    });
-    folder.addBlade({
-      view: 'slider',
-      label: 'Penumbra',
-      min: 0,
-      max: 1,
-      value: 0,
-    }).on('change', (ev) => {
-      editor.change_spotlight_penumbra(ev.value, id);
-    });
-    folder.addBlade({
-      view: 'slider',
-      label: 'Kampas',
-      min: 0,
-      max: 90,
-      value: 90,
-    }).on('change', (ev) => {
-      editor.change_spotlight_angle(ev.value, id);
-    });
-    const btn = pane.addButton({
-      title: 'Ištrinti',
-      label: 'Veiksmas',
-    }).on('click', () => {
-      Spotlight_element_count--;
-      editor.remove_spotlight(id);
-      pane.dispose();
-      column.remove();
-      masonry.remove(column);
+      }, id);
+      settings.appendChild(column);
+      masonry.appended(column);
       masonry.layout();
-    })
-    editor.add_spotlight("white", 1000, 0, Math.PI / 2, 0, {
-      x: 0,
-      y: 10,
-      z: 0
-    }, id);
-    settings.appendChild(column);
-    masonry.appended(column);
-    masonry.layout();
+    }
   })
+  //Interest point functionality
+  let Interest_element_count = 0;
+  let Interest_button = document.getElementById("interest_point");
+  Interest_button.addEventListener("click", () => {
+    if (TWEAKPANE_AMOUNT < MAX_TWEAKPANES) {
+      Interest_element_count++;
+      TWEAKPANE_AMOUNT++;
+      let id = crypto.randomUUID();
+      let settings = document.getElementById("settings_row");
+      let column = document.createElement("div");
+      column.classList = "col-12 col-lg-4 col-md-6 col-sm-6 mb-3 ";
+      const pane = new Pane({
+        container: column
+      });
+      const PARAMS = {
+        Koordinatės: {
+          x: 0,
+          y: 0,
+          z: 0
+        }
+      };
+      let get_coords = function() {
+        let new_cords = editor.get_InterestPoint(id);
+        if (new_cords) {
+          PARAMS["Koordinatės"].x = new_cords.position.x;
+          PARAMS["Koordinatės"].y = new_cords.position.y;
+          PARAMS["Koordinatės"].z = new_cords.position.z;
+          pane.refresh();
+        }
+      }
+      size_pane.element.addEventListener("click", get_coords);
+      const folder = pane.addFolder({
+        title: `Dėmesio_taškas_${Interest_element_count}`,
+        expanded: true,
+      });
+      folder.on('fold', () => {
+        setTimeout(() => {
+          masonry.layout();
+        }, 200);
+      });
+      folder.addBinding(PARAMS, 'Koordinatės', {
+        disabled: true
+      });
+      folder.addBlade({
+        view: 'text',
+        label: 'Tekstas',
+        parse: (v) => String(v),
+        value: 'Įveskite tekstą',
+      });
+      const cast_ray = folder.addButton({
+        title: 'Nustatyti',
+        label: 'Pozicija',
+      }).on('click', () => {
+        editor.Create_interestPoint(id, (coords) => {
+          PARAMS["Koordinatės"].x = coords.x;
+          PARAMS["Koordinatės"].y = coords.y;
+          PARAMS["Koordinatės"].z = coords.z;
+          pane.refresh();
+        }, ip_color_state);
+      });
+      const btn = pane.addButton({
+        title: 'Ištrinti',
+        label: 'Veiksmas',
+      }).on('click', () => {
+        Interest_element_count--;
+        TWEAKPANE_AMOUNT--;
+        editor.Delete_InterestPoint(id);
+        pane.dispose();
+        column.remove();
+        masonry.remove(column);
+        masonry.layout();
+      });
+      settings.appendChild(column);
+      masonry.appended(column);
+      masonry.layout();
+    }
+  });
 </script>
 <%- include('../partials/footer.ejs') %>

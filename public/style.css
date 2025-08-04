@@ -29,7 +29,11 @@ footer a {
     gap: 0.5rem;
 }
 
-
+#editor_window {
+    max-height: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
 
 @media (min-width: 992px) {
     .custom-card {
