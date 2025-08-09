@@ -26,6 +26,17 @@ async function insert_query(string, params) {
         if (conn) conn.release(); //release connection  back to pool
     }
 }
+//insert query and get the id
+async function insert_query_get_ID(string, params) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query(string, params); // No destructuring here
+        return Number(result.insertId);// Return inserted ID
+    } finally {
+        if (conn) conn.release(); // Release connection back to pool
+    }
+}
 // Function to format date to yyyy-MM-dd
 function formatDate(date) {
     return new Date(date).toISOString().split('T')[0];
@@ -73,4 +84,4 @@ let glb_upload = multer({
     limits: { fileSize: 100 * 1024 * 1024, files: 1 }
 }).single('GLB');
 
-module.exports = { retrieve_query, insert_query, formatDate, upload, glb_upload, generate_unique_ID };
+module.exports = { retrieve_query, insert_query, formatDate, upload, glb_upload, generate_unique_ID, insert_query_get_ID };

@@ -27,6 +27,7 @@ router.post('/edit_password', maincontroler.edit_password);
 router.get('/catalog/create', catalogcontroler.create_catalog);
 //Create a product
 router.get('/product/create', catalogcontroler.create_product);
+router.post('/product/create', catalogcontroler.create_product_post)
 //upload model
 router.get('/model/upload_model', catalogcontroler.upload_model);
 router.post('/model/upload_model', catalogcontroler.upload_model_post);
