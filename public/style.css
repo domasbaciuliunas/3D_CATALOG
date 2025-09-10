@@ -35,9 +35,110 @@ footer a {
     overflow-x: hidden;
 }
 
+#canvas_container {
+    position: relative;
+}
+
+#open_icon {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#about {
+    display: block;
+    position: absolute;
+    color: white;
+    width: 500px;
+    background-color: rgba(0, 0, 0, 0.295);
+    padding: 20px;
+    padding-top: 30px;
+    border-radius: 2%;
+    top: 10px;
+    right: 150px;
+    overflow-y: scroll;
+}
+
+#close_about {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#desc {
+    text-align: left;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 50px;
+    border-radius: 2%;
+    width: 60%;
+    height: 70%;
+    overflow: auto;
+}
+
+#desc i {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+/* Custom scrollbar styles for desktop to mimic mobile appearance */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
 @media (min-width: 992px) {
     .custom-card {
         width: 900px !important;
     }
 }
 
+@media only screen and (max-width: 1200px) {
+    #about {
+        right: 50%;
+        top: 50%;
+        transform: translateY(-50%) translateX(50%);
+        width: 50%;
+        height: 50%;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }
+}
+
+@media only screen and (max-width: 340px),
+screen and (max-height: 350px) {
+    #about {
+        display: none !important;
+    }
+
+    #open_icon {
+        display: none;
+    }
+
+}

@@ -7,14 +7,40 @@ const path = require('path');
 const NAME_LENGTH_MIN = 3;
 const NAME_LENGTH_MAX = 50;
 
-const DESCRIPTION_LENGTH_MAX = 100;
+const DESCRIPTION_LENGTH_MAX = 1000;
 const DESCRIPTION_LENGTH_MIN = 3;
 
 const MAX_TWEAKPANES = 15;
 
 //function to create a catalog
-const create_catalog = (req, res) => {
-    res.render('catalog_system/create', { title: 'Create Catalog' });
+const create_catalog = async (req, res) => {
+    //retrieves the products, models, cubemaps, ambient lights and interest points from the database
+    let products = await general_func.retrieve_query(`SELECT products.id, products.ip_color, products.arrows, products.menu, products.model_id, products.cubemap_id, products.name, products.description, products.price, products.item_scale, products.original_scale FROM products INNER JOIN 
+        user_products ON user_products.PRODUCT_ID = products.ID WHERE user_products.USER_ID = ?`, [req.session.ID]);
+    let models = {};
+    let cubemaps = {};
+    let ambient_lights = {};
+    let interest_points = {};
+    let spotlights = {};
+    let products_keyed = {};
+    for (let product of products) {
+        models[product.id] = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [product.model_id]);
+        cubemaps[product.id] = await general_func.retrieve_query('SELECT cubemap_folder FROM cubemaps WHERE id = ?', [product.cubemap_id]);
+        ambient_lights[product.id] = await general_func.retrieve_query(`SELECT ambient_lights.intensity, ambient_lights.RGB FROM ambient_lights INNER JOIN product_ambient_lights ON
+         product_ambient_lights.AL_ID = ambient_lights.id WHERE product_ambient_lights.PRODUCT_ID = ?`, [product.id]);
+        interest_points[product.id] = await general_func.retrieve_query(`SELECT interest_points.XYZ, interest_points.camera_XYZ, interest_points.text, interest_points.header FROM interest_points INNER JOIN product_interest_points ON
+         product_interest_points.IP_ID = interest_points.id WHERE product_interest_points.PRODUCT_ID = ?`, [product.id]);
+        spotlights[product.id] = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
+         product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
+        products_keyed[product.id] = product;
+        products_keyed[product.id].description = products_keyed[product.id].description.replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
+        products_keyed[product.id].name = products_keyed[product.id].name.replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        interest_points[product.id].forEach(ip => {
+            ip.text = ip.text.replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
+            ip.header = ip.text.replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        });
+    }
+    res.render('catalog_system/create_catalog', { title: 'Create Catalog', products: products, models: models, cubemaps: cubemaps, ambient_lights: ambient_lights, interest_points: interest_points, spotlights: spotlights, keyed_products: products_keyed });
 }
 //redirects to creat product page
 const create_product = async (req, res) => {
@@ -36,11 +62,14 @@ async function validation_closure(req) {
         scale: (req.body.scale_form || "").trim(),
         arrow_color: (req.body.arrow_color || "").trim(),
         ip_color: (req.body.ip_color || "").trim(),
+        menu_color: (req.body.menu_color || "").trim(),
+        original_scale: (req.body.original_scale || "").trim(),
     }
     let error_block = [];
     if (data_block.name === "" || data_block.name.length > NAME_LENGTH_MAX || data_block.name.length < NAME_LENGTH_MIN) {
         error_block.push("name");
     }
+
     if (data_block.description === "" || data_block.description.length > DESCRIPTION_LENGTH_MAX ||
         data_block.description.length < DESCRIPTION_LENGTH_MIN) {
         error_block.push("description");
@@ -55,7 +84,10 @@ async function validation_closure(req) {
         error_block.push("scale");
     }
     else {
-        data_block.scale = Math.round((data_block.scale + Number.EPSILON) * 1000) / 1000;
+        data_block.scale = Math.round((Number(data_block.scale) + Number.EPSILON) * 1000) / 1000;
+    }
+    if (isNaN(Number(data_block.original_scale))) {
+        error_block.push("original_scale");
     }
     if (req.body.price) {
         data_block.price = req.body.price;
@@ -93,8 +125,12 @@ async function INTEREST_POINT_INSERT(int_p, ID) {
     data.x = Math.round((data.x + Number.EPSILON) * 1000) / 1000;
     data.y = Math.round((data.y + Number.EPSILON) * 1000) / 1000;
     data.z = Math.round((data.z + Number.EPSILON) * 1000) / 1000;
+    data.camera_x = Math.round((data.camera_x + Number.EPSILON) * 1000) / 1000;
+    data.camera_y = Math.round((data.camera_y + Number.EPSILON) * 1000) / 1000;
+    data.camera_z = Math.round((data.camera_z + Number.EPSILON) * 1000) / 1000;
     let XYZ = data.x.toString() + ", " + data.y.toString() + ", " + data.z.toString();
-    let _id = await general_func.insert_query_get_ID(`INSERT INTO interest_points (XYZ, text) VALUES(?,?)`, [XYZ, data.text])
+    let camera_XYZ = data.camera_x.toString() + ", " + data.camera_y.toString() + ", " + data.camera_z.toString();
+    let _id = await general_func.insert_query_get_ID(`INSERT INTO interest_points (XYZ, camera_XYZ, text, header) VALUES(?,?,?,?)`, [XYZ, camera_XYZ, data.text, data.header])
     await general_func.insert_query(`INSERT INTO product_interest_points (PRODUCT_ID, IP_ID) VALUES(?,?)`, [ID, _id]);
 }
 //function to save spotlights to the database
@@ -134,7 +170,6 @@ async function write_json(data, callback, ID) {
 const create_product_post = async (req, res) => {
     try {
         let { error_block, data_block } = await validation_closure(req);
-        console.log(req.body);
         if (error_block.length > 0) {
             req.session.errors = error_block;
             await req.session.save();
@@ -146,10 +181,12 @@ const create_product_post = async (req, res) => {
             else { data_block.arrow_color = "black" }
             if (data_block.ip_color === "") { data_block.ip_color = "white" }
             else { data_block.ip_color = "black" }
+            if (data_block.menu_color === "") { data_block.menu_color = "white" }
+            else { data_block.menu_color = "black" }
 
             let model_id = await general_func.retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [data_block.model]);
-            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, model_id, cubemap_id, name, description, price) VALUES(?,?,?,?,?,?,?)`,
-                [data_block.arrow_color, data_block.ip_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price]);
+            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, menu, model_id, cubemap_id, name, description, price, item_scale, original_scale) VALUES(?,?,?,?,?,?,?,?,?,?)`,
+                [data_block.arrow_color, data_block.ip_color, data_block.menu_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price, data_block.scale, Number(data_block.original_scale)]);
             await write_json(req.body.ambient, AMBIENT_LIGHTS_INSERT, ID);
             await write_json(req.body.interest_point, INTEREST_POINT_INSERT, ID);
             await write_json(req.body.spotlight, SPOTLIGHT_INSERT, ID);

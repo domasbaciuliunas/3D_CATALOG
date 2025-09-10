@@ -46,20 +46,28 @@ class ambientLight {
 
 class GLB_model {
   constructor(path, name, y_scale, scene, callback) {
+    this.scene = scene;
+    this.isRemoved = false; // Track if removed before load finishes
     loader.load((path + name), (glb) => {
+      if (this.isRemoved) return; // Don't add if already removed
       this.glb_scene = glb.scene;
+      this.glb_scene.name = "MAIN_MODEL";
       this.glb_scene.traverse((child) => {
-        if (child.isMesh && !this.mainMeshSet) {
-          child.name = "MAIN_MODEL";
-          this.mainMeshSet = true;
+        if (child.isMesh) {
+          child.userData.mainModel = true;
+          if (!this.mainMeshSet) {
+            child.name = "MAIN_MODEL";
+            this.mainMeshSet = true;
+          }
         }
       });
+
       let box = new THREE.Box3().setFromObject(this.glb_scene);
       this.size = box.getSize(new THREE.Vector3());
       this.y_scalar = y_scale / this.size["y"];
       this.original_scale = this.y_scalar;
       this.glb_scene.scale.set(this.y_scalar, this.y_scalar, this.y_scalar);
-      this.glb_scene.position.set(0, 0, 0);
+      this.center_item();
       this.glb_scene.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -71,12 +79,21 @@ class GLB_model {
     });
   }
 
+  //method to center the item
+  center_item() {
+    let box = new THREE.Box3().setFromObject(this.glb_scene);
+    var center = new THREE.Vector3();
+    box.getCenter(center);
+    this.glb_scene.position.sub(center);
+  }
+
   get_original_scale() {
     return this.original_scale;
   }
 
   change_size(desired_scale) {
     this.glb_scene.scale.set(desired_scale / this.size["y"], desired_scale / this.size["y"], desired_scale / this.size["y"]);
+    this.center_item();
   }
 
   get_size() {
@@ -84,7 +101,10 @@ class GLB_model {
   }
 
   remove_glb(scene) {
-    scene.remove(this.glb_scene);
+    this.isRemoved = true;
+    if (this.glb_scene) {
+      scene.remove(this.glb_scene);
+    }
   }
 }
 
@@ -107,12 +127,23 @@ class Pointer_Event {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children, true);
     if (intersects.length > 0) {
-      const obj = intersects[0].object;
-      if (obj.name === "MAIN_MODEL") {
-        intersects[0].point.x = Math.round((intersects[0].point.x + Number.EPSILON) * 100) / 100
-        intersects[0].point.y = Math.round((intersects[0].point.y + Number.EPSILON) * 100) / 100
-        intersects[0].point.z = Math.round((intersects[0].point.z + Number.EPSILON) * 100) / 100
-        this.coordinates = intersects[0].point;
+      // find the first intersect that belongs to the loaded model (walk parents)
+      const hitIndex = intersects.findIndex((it) => {
+        let o = it.object;
+        while (o) {
+          if (o.name === "MAIN_MODEL" || (o.userData && o.userData.mainModel)) return true;
+          o = o.parent;
+        }
+        return false;
+      });
+      if (hitIndex !== -1) {
+        const obj = intersects[hitIndex].object;
+        // use the corresponding point
+        const point = intersects[hitIndex].point;
+        point.x = Math.round((point.x + Number.EPSILON) * 100) / 100;
+        point.y = Math.round((point.y + Number.EPSILON) * 100) / 100;
+        point.z = Math.round((point.z + Number.EPSILON) * 100) / 100;
+        this.coordinates = point;
         // Call the callback function to notify the event
         if (typeof callback === 'function') {
           callback(this.coordinates);
@@ -150,6 +181,7 @@ class Editor {
     this.ambientLights = {};
     this.interest_points = {};
     this.glb_model;
+    this.camera_coords;
 
     this.view_height = view_height;
     this.scene = new THREE.Scene();
@@ -228,12 +260,15 @@ class Editor {
 
   //add GLB model to the scene
   add_GLB(path, name, y_scale, callback) {
-    const GLB = new GLB_model(path, name, y_scale, this.scene, callback);
-    this.glb_model = GLB;
+    this.remove_GLB(); // Always remove previous GLB before loading new one
+    this.glb_model = new GLB_model(path, name, y_scale, this.scene, callback);
   }
 
   remove_GLB() {
-    if (this.glb_model) { this.glb_model.remove_glb(this.scene) };
+    if (this.glb_model) {
+      this.glb_model.remove_glb(this.scene);
+      this.glb_model = null;
+    }
   }
 }
 
@@ -356,6 +391,31 @@ class BasicEditor extends Editor {
     return this.ambientLights;
   }
 
+  // Advanced displacement function
+  applyDisplacement(coordinates, options = {}) {
+    // Default options
+    const {
+      distance = 0.3,
+      direction = { x: 1, y: 1, z: 1 }, // Use 1 or -1 for each axis, or 0 for none
+      scale = 1,
+      customDisplacement = null // Optional callback for custom logic
+    } = options;
+
+    let displaced = coordinates.clone ? coordinates.clone() : { ...coordinates };
+
+    if (typeof customDisplacement === 'function') {
+      return customDisplacement(displaced, options);
+    }
+
+    // Apply displacement per axis
+    ['x', 'y', 'z'].forEach(axis => {
+      if (displaced[axis] !== undefined) {
+        displaced[axis] += direction[axis] * distance * scale;
+      }
+    });
+    return displaced;
+  }
+
   //returns the pointer event and creates an interest_point
   Create_interestPoint(_id, onClickCallback, state) {
     this.pointer_event.pointer_event((coordinates) => {
@@ -376,8 +436,8 @@ class BasicEditor extends Editor {
         const black_material = new THREE.SpriteMaterial({ map: question_mark_black });
 
         let interest_point;
-        if (state === false) {  interest_point = new THREE.Sprite(white_material); }
-        else if (state === true) {  interest_point = new THREE.Sprite(black_material); }
+        if (state === false) { interest_point = new THREE.Sprite(white_material); }
+        else if (state === true) { interest_point = new THREE.Sprite(black_material); }
 
         let refrence_size = this.get_size();
         let original_scale = this.glb_model.get_original_scale();
@@ -386,12 +446,25 @@ class BasicEditor extends Editor {
         let calculated_scale = (refrence_size.y / original_scale) - (refrence_size.y / original_scale) * 0.3;
         interest_point.scale.set(calculated_scale, calculated_scale, 1);
 
-        interest_point.position.copy(coordinates);
+        let displacedCoordinates = this.applyDisplacement(coordinates, {
+          distance: 0.3,
+          direction: {
+            x: coordinates.x >= 0 ? 1 : -1,
+            y: coordinates.y >= 0 ? 1 : -1,
+            z: coordinates.z >= 0 ? 1 : -1
+          },
+          scale: 1
+        });
+
+        //sets the camera postion to a variable
+        this.camera_coords = this.camera.position;
+
+        interest_point.position.copy(displacedCoordinates);
         this.scene.add(interest_point);
         this.interest_points[_id] = interest_point;
 
         if (typeof onClickCallback === 'function') {
-          onClickCallback(coordinates);
+          onClickCallback(displacedCoordinates);
         }
       }
     });
@@ -411,6 +484,15 @@ class BasicEditor extends Editor {
   //return the interest point
   get_InterestPoint(key) {
     return this.interest_points[key];
+  }
+
+  //return all interest points
+  get_InterestPoints() {
+    return this.interest_points;
+  }
+
+  get_camera_position() {
+    return this.camera_coords;
   }
 
   change_arrow_color(color) {
@@ -464,4 +546,316 @@ class BasicEditor extends Editor {
   }
 }
 
-export { BasicEditor };
+class CatalogEditor extends Editor {
+  constructor(view_height, section_id, camera_position, min_zoom, max_zoom) {
+    super(view_height, section_id, camera_position, min_zoom, max_zoom);
+    this.item_array = [];
+    this.index = 0;
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2()
+    this.cubeTextureLoader = new THREE.CubeTextureLoader();
+    this.about = document.getElementById("about");
+  }
+
+  //sets the current index of the item array
+  set_current_index(index) {
+    this.index = index;
+  }
+
+  get_item_array_length() {
+    return this.item_array.length - 1;
+  }
+
+  //loads the resources into the item array
+  load_resource(spotlights, ambient_lights, interest_points, glb_models, cubemaps, products, id, name) {
+    this.item_array.push({
+      "spotLights": spotlights,
+      "ambientLights": ambient_lights,
+      "interestPoints": interest_points,
+      "glbModel": glb_models,
+      "cubemap": cubemaps,
+      "product": products,
+      "id": id,
+      "name": name
+    });
+    console.log(this.item_array);
+  }
+
+  //finds the index of an item in the item array by its id
+  find_by_id(id) {
+    return this.item_array.findIndex(item => item.id === id);
+  }
+
+  //returns all the items inside the array
+  get_items() {
+    return this.item_array;
+  }
+
+  //switch the indexes places
+  switch_places(old_index, new_index) {
+    let old_i = this.find_by_id(old_index);
+    let new_i = this.find_by_id(new_index);
+    let temp = this.item_array[old_i];
+    this.item_array[old_i] = this.item_array[new_i];
+    this.item_array[new_i] = temp;
+    if (this.index === old_i || this.index === new_i) {
+      this.reconstruct_scene(this.index);
+    }
+  }
+
+  //appends the text to the about section
+  parse_text(text) {
+    let div = document.getElementById("paragraphs");
+    let p = document.createElement("p");
+    p.innerText = text;
+    div.appendChild(p);
+  }
+
+  //pointer event for changing the pages and interacting with the interest points
+  page_event(event) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+
+    //read the DOM
+    let open_icon = document.getElementById('open_icon');
+    let description = document.getElementById("desc");
+    let description_div = document.querySelector("#desc div");
+
+    if (intersects.length > 0) {
+      const obj = intersects[0].object;
+      if (obj.name == `Rightarrow` && this.index < this.item_array.length - 1) {
+        this.index = this.index + 1;
+        this.reconstruct_scene(this.index);
+        let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
+        description_div.innerHTML = parsed_data["description"];
+        this.about.style.display = "none";
+        description.style.display = 'none';
+        open_icon.style.display = 'block';
+      }
+      if (obj.name == `Leftarrow` && this.index > 0) {
+        this.index = this.index - 1;
+        this.reconstruct_scene(this.index);
+        let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
+        description_div.innerHTML = parsed_data["description"];
+        this.about.style.display = "none";
+        description.style.display = 'none';
+        open_icon.style.display = 'block';
+      }
+      if (intersects[1]) {
+        const obj_2 = intersects[1].object;
+        if (this.interest_points[obj.name]) {
+          this.about.style.display = "block";
+          document.getElementById("headers").innerHTML = "";
+          document.getElementById("paragraphs").innerHTML = ""; // Clear previous content
+          document.getElementById("headers").innerHTML = this.interest_points[obj.name].header
+          this.parse_text(this.interest_points[obj.name].text);
+          let camera_coords = this.interest_points[obj.name].camera_XYZ;
+          let camera_position = {
+            "x": Number(camera_coords[0]),
+            "y": Number(camera_coords[1]),
+            "z": Number(camera_coords[2])
+          }
+          this.camera.position.set(camera_position["x"], camera_position["y"], camera_position["z"]);
+        }
+        else if (this.interest_points[obj_2.name]) {
+          this.about.style.display = "block";
+          document.getElementById("headers").innerHTML = "";
+          document.getElementById("paragraphs").innerHTML = ""; // Clear previous content
+          document.getElementById("headers").innerHTML = this.interest_points[obj_2.name].header
+          this.parse_text(this.interest_points[obj_2.name].text);
+          let camera_coords = this.interest_points[obj_2.name].camera_XYZ;
+          let camera_position = {
+            "x": Number(camera_coords[0]),
+            "y": Number(camera_coords[1]),
+            "z": Number(camera_coords[2])
+          }
+          this.camera.position.set(camera_position["x"], camera_position["y"], camera_position["z"]);
+        }
+      }
+    }
+  }
+
+  add_page_event_listener() {
+    this.renderer.domElement.addEventListener('click', (event) => this.page_event(event));
+  }
+
+  reconstruct_scene(index, callback) {
+    let open_icon = document.getElementById('open_icon');
+    let description = document.getElementById("desc");
+
+    description.style.display = 'none';
+    open_icon.style.display = 'block';
+
+    this.clear_scene()
+    this.remove_GLB();
+    //load the GLB model
+    this.add_GLB("/GLB_FILES/", this.item_array[index].glbModel.GLB_ID, this.item_array[index].product.item_scale);
+    //load the cubemap
+    this.cubeTextureLoader.setPath(`/images/cubemaps/${this.item_array[index].cubemap[0]["cubemap_folder"]}/`);
+    const backgroundCubemap = this.cubeTextureLoader.load([
+      '_px.png',
+      '_nx.png',
+      '_py.png',
+      '_ny.png',
+      '_pz.png',
+      '_nz.png'
+    ]);
+    this.scene.background = backgroundCubemap;
+
+    //add the spotlights
+    let spotlights = this.item_array[index].spotLights;
+    if (spotlights.length > 0) {
+      for (let spotlight of spotlights) {
+        let spotlight_position = spotlight.XYZ.split(",");
+        spotlight_position = { x: Number(spotlight_position[0]), y: Number(spotlight_position[1]), z: Number(spotlight_position[2]) };
+        let spotlight_colors = spotlight.RGB.split(",");
+        spotlight_colors = { r: Number(spotlight_colors[0]), g: Number(spotlight_colors[1]), b: Number(spotlight_colors[2]) };
+        const pi = Math.PI;
+        let radians = spotlight.angle * (pi / 180);
+        let SpotLight = new spotLight("white", spotlight.intensity, spotlight.distance, radians, spotlight.penumbra, spotlight_position);
+        SpotLight.spotLight.color.setRGB(spotlight_colors.r, spotlight_colors.g, spotlight_colors.b);
+        SpotLight.add_to_scene(this.scene);
+        this.spotlights[`${crypto.randomUUID()}`] = SpotLight;
+      }
+    }
+
+    //add the ambient lights
+    let ambient_lights = this.item_array[index].ambientLights;
+    if (ambient_lights.length > 0) {
+      for (let ambient_light of ambient_lights) {
+        let ambient_light_colors = ambient_light.RGB.split(",");
+        ambient_light_colors = { r: Number(ambient_light_colors[0]), g: Number(ambient_light_colors[1]), b: Number(ambient_light_colors[2]) };
+        let AmbientLight = new ambientLight("white", ambient_light.intensity);
+        AmbientLight.ambientLight.color.setRGB(ambient_light_colors.r, ambient_light_colors.g, ambient_light_colors.b);
+        AmbientLight.add_to_scene(this.scene);
+        this.ambientLights[`${crypto.randomUUID()}`] = AmbientLight;
+      }
+    }
+    const left_arrow = this.textureLoader.load('/images/textures/icons8-sort-left-48black.png');
+    const right_arrow = this.textureLoader.load('/images/textures/icons8-sort-right-48black.png');
+    let black_material_right = new THREE.SpriteMaterial({ map: right_arrow });
+    let black_material_left = new THREE.SpriteMaterial({ map: left_arrow });
+    const left_arrow_white = this.textureLoader.load('/images/textures/icons8-arrow-left.png');
+    const right_arrow_white = this.textureLoader.load('/images/textures/icons8-arrow-right.png')
+    let white_material_right = new THREE.SpriteMaterial({ map: right_arrow_white });
+    let white_material_left = new THREE.SpriteMaterial({ map: left_arrow_white });
+
+    let color = this.item_array[index].product.arrows;
+    if (color === "black") {
+      this.arrow_r.material = black_material_right;
+      this.arrow_l.material = black_material_left;
+    }
+    else if (color === "white") {
+      this.arrow_r.material = white_material_right;
+      this.arrow_l.material = white_material_left;
+    }
+
+    //Create and add new interest point
+    const question_mark_white = this.textureLoader.load('/images/textures/icons8-question-50.png');
+    const question_mark_black = this.textureLoader.load('/images/textures/icons8-question-50black.png');
+
+    const white_material = new THREE.SpriteMaterial({ map: question_mark_white });
+    const black_material = new THREE.SpriteMaterial({ map: question_mark_black });
+
+    let state = this.item_array[index].product.ip_color;
+    //add the interest points
+    let interest_points = this.item_array[index].interestPoints;
+    if (interest_points.length > 0) {
+      for (let interest_point of interest_points) {
+        let coordinates = interest_point.XYZ.split(",");
+        coordinates = { x: Number(coordinates[0]), y: Number(coordinates[1]), z: Number(coordinates[2]) };
+        let ip;
+        if (state === "white") { ip = new THREE.Sprite(white_material); }
+        else if (state === "black") { ip = new THREE.Sprite(black_material); }
+        ip.position.copy(coordinates);
+
+        //interest_point.scale.set()
+        let refrence_size = this.item_array[index].product.item_scale;
+        let original_scale = this.item_array[index].product.original_scale;
+
+        //calculate scale
+        let calculated_scale = (refrence_size / original_scale) - (refrence_size / original_scale) * 0.3;
+        ip.scale.set(calculated_scale, calculated_scale, 1);
+        let UUID = crypto.randomUUID()
+        ip.name = UUID;
+
+        //interest point text 
+        ip.text = interest_point.text;
+
+        //ineterest point header
+        ip.header = interest_point.header;
+
+        //interest point camera XYZ
+        ip.camera_XYZ = interest_point.camera_XYZ.split(",");
+
+        //add to the scene
+        this.scene.add(ip);
+        this.interest_points[`${UUID}`] = ip;
+      }
+    }
+
+    //change to color of the menu chevron
+    let menu_state = this.item_array[index].product.menu;
+    let chevron = document.getElementById("open_icon");
+    if (menu_state === "black") { chevron.style.color = "black"; }
+    else if (menu_state === "white") { chevron.style.color = "white"; }
+
+    if (callback) { callback() }
+  }
+
+  //clear the scene 
+  clear_scene() {
+    //remove all spotlights 
+    if (this.spotlights) {
+      for (let key in this.spotlights) {
+        this.spotlights[key].remove_spotlight(this.scene);
+      }
+      this.spotlights = {};
+    }
+
+    //remove all ambient lights
+    if (this.ambientLights) {
+      for (let key in this.ambientLights) {
+        this.ambientLights[key].remove_ambient_light(this.scene);
+      }
+      this.ambientLights = {};
+    }
+
+    //remove all interest points
+    if (this.interest_points) {
+      for (let key in this.interest_points) {
+        let sprite = this.interest_points[key];
+        if (sprite) {
+          this.scene.remove(sprite);
+          sprite.material.dispose();
+          sprite = null;
+        }
+      }
+    }
+  }
+
+  //method to delete an item from the item array
+  delete_item(index) {
+    if (index >= 0 && index < this.item_array.length) {
+      if (this.index === 0 && this.item_array.length === 1) {
+        this.clear_scene();
+        this.remove_GLB();
+        this.index = 0;
+        this.item_array = [];
+      }
+      else if (this.index === index) {
+        this.reconstruct_scene(this.index);
+      }
+      this.item_array.splice(index, 1);
+      if (this.index >= this.item_array.length) {
+        this.index = this.item_array.length - 1; // Adjust index if it exceeds the new length
+      }
+    } else {
+      console.error("Index out of bounds");
+    }
+  }
+}
+export { BasicEditor, CatalogEditor };
