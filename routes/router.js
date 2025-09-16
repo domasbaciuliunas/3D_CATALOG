@@ -10,5 +10,7 @@ router.post('/', maincontroler.login_post);
 //Registration routes
 router.get('/register', maincontroler.register);
 router.post('/register', maincontroler.register_post);
+//Load catalog
+router.get('/catalog/created/:id', catalogcontroler.load_catalog);
 
 module.exports = router;

@@ -1,0 +1,94 @@
+<%- include('../partials/head.ejs') %>
+
+<body id="body_viewer">
+  <div id="viewer_container">
+  </div>
+  <div class="container">
+    <h1 id="title_viewer">TITLE</h1>
+    <div id="Description_viewer">
+      <div></div>
+      <i class="fa-solid fa-x fa-2xl" id="close_icon_viewer" style="color: #ffffff;"></i>
+    </div>
+  </div>
+  <div id="about_viewer">
+    <h5 id="headers" style="color: #ffffff;"></h5>
+    <div id="paragraphs"></div>
+    <i class="fa-solid fa-x fa-xl" id="close_about_viewer" style="color: #ffffff;"></i>
+  </div>
+  <button type="button" id="navigation_button" class="btn btn-dark">Navigacija</button>
+  <div id="navigation_menu">
+  </div>
+  <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon_viewer" style="color: #ffffff;"></i>
+</body>
+
+<script>
+  window.products = JSON.parse(`<%-JSON.stringify(products)%>`);
+  window.catalogs = JSON.parse(`<%-JSON.stringify(catalog)%>`);
+</script>
+<script type="module">
+  import {
+    CatalogViewer
+  } from '/3D_scripts/Catalog_viewer.js';
+
+  /*CATALOG VIEWER*/
+  //import the CatalogEditor class from the Editor.js file
+  let viewer = new CatalogViewer(window.innerHeight, 'viewer_container', {
+    x: 0,
+    y: 0,
+    z: 30
+  }, 10, 30);
+  viewer.resize();
+  viewer.animate();
+  viewer.load_items(window.products);
+  viewer.add_page_event_listener();
+  viewer.render_desc();
+
+  //get the description and open icon elements
+  let description = document.getElementById('Description_viewer');
+  let open_icon = document.getElementById('open_icon_viewer');
+  let about = document.getElementById("about_viewer");
+  about.style.display = 'none';
+
+  description.style.display = 'none';
+
+  document.getElementById('close_icon_viewer').addEventListener('click', () => {
+    description.style.display = 'none';
+    open_icon.style.display = 'block';
+  });
+
+  document.getElementById('open_icon_viewer').addEventListener('click', () => {
+    description.style.display = 'block';
+    open_icon.style.display = 'none';
+    about.style.display = 'none';
+  });
+
+  document.getElementById('close_about_viewer').addEventListener('click', () => {
+    about.style.display = 'none';
+  });
+
+  //methods to display or hide the navigation_menu
+  document.getElementById('navigation_menu').style.display = 'none';
+  document.getElementById('navigation_button').addEventListener('click', () => {
+    let menu = document.getElementById('navigation_menu');
+    if (menu.style.display === 'none') {
+      menu.style.display = 'block'
+    } else {
+      menu.style.display = 'none'
+    }
+  });
+
+  //generate navigation menu items
+  let size = viewer.get_item_array_size();
+  for (let x = 1; x <= size; x++) {
+    let button = document.createElement('button');
+    button.classList = "btn btn-dark my-1";
+    button.style.display = 'block';
+    button.innerText = x;
+    button.setAttribute("Index", x);
+    button.addEventListener("click", () => {
+      let attribute = button.getAttribute("Index");
+      viewer.navigate_to(attribute - 1);
+    })
+    document.getElementById('navigation_menu').appendChild(button);
+  }
+</script>

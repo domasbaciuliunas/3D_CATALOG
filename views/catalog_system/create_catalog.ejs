@@ -5,17 +5,21 @@
     <!-- About section -->
     <div id="about">
       <i class="fa-solid fa-x fa-xl" id="close_about" style="color: #ffffff;"></i>
-      <h5 id="headers"></h5>
+      <h5 id="headers" style="color: #ffffff;"></h5>
       <div id="paragraphs"></div>
     </div>
     <div id="desc">
       <i class="fa-solid fa-x fa-2xl" id="close_icon" style="color: #ffffff;"></i>
       <div>
+        <h3>Kaina: </h3>
       </div>
     </div>
     <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon" style="color: #ffffff;"></i>
   </div>
   <div id="settings" class="mb-3">
+    <%if (errors && errors.includes("products")) { %>
+    <span style="color:red">*Produktai netinkami</span>
+    <% } %>
     <h2>Nustatymai:</h2>
     <div id="editor_window" class="mb-3">
       <h4>Navigacija: </h4>
@@ -49,6 +53,9 @@
     <div class="mb-3">
       <label for="catalog_name">Katalogo pavadinimas:</label>
       <input type="text" class="form-control" id="catalog_name" name="catalog_name">
+      <%if (errors && errors.includes("name")) { %>
+      <span style="color:red">Katalogo pavadinimas netinkamas</span>
+      <% } %>
     </div>
 
     <div>

@@ -207,7 +207,7 @@ class Editor {
 
     //create new renderer and add a canvas to the document
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.domElement.classList.add('mb-3');
+    //this.renderer.domElement.classList.add('mb-3');
     this.renderer.setSize(width, view_height);
     this.renderer.domElement.style.display = "block";
     this.renderer.domElement.style.width = "100%";
@@ -248,6 +248,7 @@ class Editor {
   resize() {
     window.addEventListener('resize', () => {
       let width = this.get_section_size();
+      console.log(width);
       this.renderer.setSize(width, this.view_height);
       this.camera.aspect = width / this.view_height;
       this.camera.updateProjectionMatrix();
@@ -578,7 +579,6 @@ class CatalogEditor extends Editor {
       "id": id,
       "name": name
     });
-    console.log(this.item_array);
   }
 
   //finds the index of an item in the item array by its id
@@ -603,12 +603,22 @@ class CatalogEditor extends Editor {
     }
   }
 
-  //appends the text to the about section
-  parse_text(text) {
-    let div = document.getElementById("paragraphs");
-    let p = document.createElement("p");
-    p.innerText = text;
-    div.appendChild(p);
+  //renders the description
+  render_desc() {
+    //read the DOM
+    let open_icon = document.getElementById('open_icon');
+    let description = document.getElementById("desc");
+    let description_div = document.querySelector("#desc div");
+
+    this.reconstruct_scene(this.index);
+    let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
+    description_div.innerHTML = parsed_data["description"];
+    let price = document.createElement("h3");
+    price.innerText = 'Kaina: ' + parsed_data["price"] + ' €';
+    description_div.appendChild(price);
+    this.about.style.display = "none";
+    description.style.display = 'none';
+    open_icon.style.display = 'block';
   }
 
   //pointer event for changing the pages and interacting with the interest points
@@ -619,39 +629,26 @@ class CatalogEditor extends Editor {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-    //read the DOM
-    let open_icon = document.getElementById('open_icon');
-    let description = document.getElementById("desc");
-    let description_div = document.querySelector("#desc div");
-
     if (intersects.length > 0) {
       const obj = intersects[0].object;
       if (obj.name == `Rightarrow` && this.index < this.item_array.length - 1) {
         this.index = this.index + 1;
-        this.reconstruct_scene(this.index);
-        let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
-        description_div.innerHTML = parsed_data["description"];
-        this.about.style.display = "none";
-        description.style.display = 'none';
-        open_icon.style.display = 'block';
+        this.render_desc();
       }
       if (obj.name == `Leftarrow` && this.index > 0) {
         this.index = this.index - 1;
-        this.reconstruct_scene(this.index);
-        let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
-        description_div.innerHTML = parsed_data["description"];
-        this.about.style.display = "none";
-        description.style.display = 'none';
-        open_icon.style.display = 'block';
+        this.render_desc();
       }
       if (intersects[1]) {
         const obj_2 = intersects[1].object;
         if (this.interest_points[obj.name]) {
           this.about.style.display = "block";
-          document.getElementById("headers").innerHTML = "";
+          document.getElementById("headers").innerText = "";
           document.getElementById("paragraphs").innerHTML = ""; // Clear previous content
-          document.getElementById("headers").innerHTML = this.interest_points[obj.name].header
-          this.parse_text(this.interest_points[obj.name].text);
+          document.getElementById("headers").innerText = this.interest_points[obj.name].header
+          console.log(this.interest_points[obj.name].header);
+          let div = document.getElementById("paragraphs");
+          div.innerHTML = this.interest_points[obj.name].text;
           let camera_coords = this.interest_points[obj.name].camera_XYZ;
           let camera_position = {
             "x": Number(camera_coords[0]),
@@ -662,10 +659,11 @@ class CatalogEditor extends Editor {
         }
         else if (this.interest_points[obj_2.name]) {
           this.about.style.display = "block";
-          document.getElementById("headers").innerHTML = "";
+          document.getElementById("headers").innerText = "";
           document.getElementById("paragraphs").innerHTML = ""; // Clear previous content
-          document.getElementById("headers").innerHTML = this.interest_points[obj_2.name].header
-          this.parse_text(this.interest_points[obj_2.name].text);
+          document.getElementById("headers").innerText = this.interest_points[obj_2.name].header
+          let div = document.getElementById("paragraphs");
+          div.innerHTML = this.interest_points[obj_2.name].text;
           let camera_coords = this.interest_points[obj_2.name].camera_XYZ;
           let camera_position = {
             "x": Number(camera_coords[0]),
@@ -858,4 +856,5 @@ class CatalogEditor extends Editor {
     }
   }
 }
-export { BasicEditor, CatalogEditor };
+
+export { BasicEditor, CatalogEditor, Editor, ambientLight, spotLight };

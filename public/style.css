@@ -29,6 +29,7 @@ footer a {
     gap: 0.5rem;
 }
 
+/*THE EDITOR*/
 #editor_window {
     max-height: 300px;
     overflow-y: scroll;
@@ -78,13 +79,103 @@ footer a {
     border-radius: 2%;
     width: 60%;
     height: 70%;
-    overflow: auto;
+    overflow: auto
 }
 
 #desc i {
     position: absolute;
     top: 20px;
     right: 20px;
+}
+
+#paragraphs {
+    color: white;
+}
+
+/*THE VIEWER*/
+#title_viewer {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+}
+
+#Description_viewer {
+    text-align: left;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 50px;
+    border-radius: 2%;
+    width: 60%;
+    height: 70%;
+    overflow: auto;
+}
+
+#Description_viewer i {
+    position: absolute;
+    top: 30px;
+    right: 20px;
+}
+
+#about_viewer {
+    display: block;
+    position: fixed;
+    top: 200px;
+    right: 250px;
+    color: white;
+    width: 500px;
+    background-color: rgba(0, 0, 0, 0.164);
+    padding: 5px;
+    border-radius: 2%;
+}
+
+#open_icon_viewer {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#viewer_container {
+    margin: 0;
+    overflow: hidden;
+}
+
+#close_about_viewer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#navigation_button {
+    background-color: rgba(0, 0, 0, 0.295);
+    border: none;
+    position: absolute;    
+    top: 10px;
+    left: 10px;
+}
+
+#navigation_menu {
+
+    border: none;
+    position: absolute;    
+    top: 50px;
+    left: 10px;
+    color: white;
+    border-radius: 2%;
+    padding: 5px;
+    height: 300px;
+    overflow-y: scroll;
+}
+
+#navigation_menu button {
+    background-color: rgba(0, 0, 0, 0.295);
 }
 
 /* Custom scrollbar styles for desktop to mimic mobile appearance */
@@ -141,4 +232,48 @@ screen and (max-height: 350px) {
         display: none;
     }
 
+}
+
+/*Viewer medias*/
+@media only screen and (max-width: 1200px) {
+    #about_viewer {
+        right: 50%;
+        transform: translateX(50%);
+        width: 60%;
+        height: 50%;
+        overflow-y: scroll;
+    }
+}
+
+@media only screen and (min-width: 600px) {
+    #Description_viewer {
+        width: 70%;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    #Description_viewer {
+        width: 70%;
+    }
+}
+
+@media only screen and (max-width: 340px),
+screen and (max-height: 350px) {
+    #title_viewer {
+        display: none;
+    }
+
+    #open_icon_viewer {
+        display: none;
+    }
+
+    #about_viewer {
+        display: none !important;
+    }
+}
+
+@media only screen and (max-height: 550px) {
+    #about_viewer {
+        height: 30%;
+    }
 }

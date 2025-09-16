@@ -68,7 +68,7 @@ const storage = multer.diskStorage({
         cb(null, path.join(__dirname, '../GLB_files'))
     },
     filename: async function (req, file, cb) {
-       cb(null, await generate_unique_ID((ID) => retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [ID]),
+        cb(null, await generate_unique_ID((ID) => retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [ID]),
             () => crypto.randomBytes(64).toString('hex') + '.glb'));
     }
 });

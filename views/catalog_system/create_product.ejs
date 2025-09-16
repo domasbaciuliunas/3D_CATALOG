@@ -12,11 +12,13 @@
     <label for="ip_color">Tamsūs dėmesio taškai</label><br>
     <input type="checkbox" onclick="change_icon_color()" id="menu_color" name="menu_color" form="editor_form" style="display: inline-block;">
     <label for="menu_color">Tamsi meniu ikona</label><br>
+    <input type="checkbox" id="title_color" name="title_color" form="editor_form" style="display: inline-block;">
+    <label for="ip_color">Tamsus pavadinimas</label><br>
     <%if (errors && errors.includes("scale")) { %>
-    <span style="color:red">Netinkamas dydis</span>
+    <span style="color:red">*Netinkamas dydis</span>
     <% } %>
     <%if (errors && errors.includes("tweakpanes")) { %>
-    <span style="color:red">Per daug modulių</span>
+    <span style="color:red">*Per daug modulių</span>
     <% } %>
   </div>
   <div id="editor_window" class="mb-3">

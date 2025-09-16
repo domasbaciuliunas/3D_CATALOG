@@ -2,6 +2,7 @@ const general_func = require('../functions/general_functions'); //retrieves gene
 const multer = require('multer');
 const fs = require('fs').promises;
 const path = require('path');
+const sanitizeHtml = require('sanitize-html');
 
 //Constants for validation
 const NAME_LENGTH_MIN = 3;
@@ -10,48 +11,10 @@ const NAME_LENGTH_MAX = 50;
 const DESCRIPTION_LENGTH_MAX = 1000;
 const DESCRIPTION_LENGTH_MIN = 3;
 
-const MAX_TWEAKPANES = 15;
+const TITLE_LENGTH_MIN = 1;
+const TITLE_LENGTH_MAX = 50;
 
-//function to create a catalog
-const create_catalog = async (req, res) => {
-    //retrieves the products, models, cubemaps, ambient lights and interest points from the database
-    let products = await general_func.retrieve_query(`SELECT products.id, products.ip_color, products.arrows, products.menu, products.model_id, products.cubemap_id, products.name, products.description, products.price, products.item_scale, products.original_scale FROM products INNER JOIN 
-        user_products ON user_products.PRODUCT_ID = products.ID WHERE user_products.USER_ID = ?`, [req.session.ID]);
-    let models = {};
-    let cubemaps = {};
-    let ambient_lights = {};
-    let interest_points = {};
-    let spotlights = {};
-    let products_keyed = {};
-    for (let product of products) {
-        models[product.id] = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [product.model_id]);
-        cubemaps[product.id] = await general_func.retrieve_query('SELECT cubemap_folder FROM cubemaps WHERE id = ?', [product.cubemap_id]);
-        ambient_lights[product.id] = await general_func.retrieve_query(`SELECT ambient_lights.intensity, ambient_lights.RGB FROM ambient_lights INNER JOIN product_ambient_lights ON
-         product_ambient_lights.AL_ID = ambient_lights.id WHERE product_ambient_lights.PRODUCT_ID = ?`, [product.id]);
-        interest_points[product.id] = await general_func.retrieve_query(`SELECT interest_points.XYZ, interest_points.camera_XYZ, interest_points.text, interest_points.header FROM interest_points INNER JOIN product_interest_points ON
-         product_interest_points.IP_ID = interest_points.id WHERE product_interest_points.PRODUCT_ID = ?`, [product.id]);
-        spotlights[product.id] = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
-         product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
-        products_keyed[product.id] = product;
-        products_keyed[product.id].description = products_keyed[product.id].description.replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
-        products_keyed[product.id].name = products_keyed[product.id].name.replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
-        interest_points[product.id].forEach(ip => {
-            ip.text = ip.text.replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
-            ip.header = ip.text.replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
-        });
-    }
-    res.render('catalog_system/create_catalog', { title: 'Create Catalog', products: products, models: models, cubemaps: cubemaps, ambient_lights: ambient_lights, interest_points: interest_points, spotlights: spotlights, keyed_products: products_keyed });
-}
-//redirects to creat product page
-const create_product = async (req, res) => {
-    let models = await general_func.retrieve_query(`SELECT NAME, GLB_ID FROM models INNER JOIN users_models ON
-         models.ID = users_models.MODEL_ID WHERE users_models.USER_ID = ?`, [req.session.ID]);
-    let cubemap = await general_func.retrieve_query('SELECT * FROM cubemaps');
-    let errors = req.session.errors;
-    req.session.errors = null;
-    await req.session.save();
-    res.render('catalog_system/create_product', { title: 'Create Product', errors: errors, models: models, cubemaps: cubemap });
-}
+const MAX_TWEAKPANES = 15;
 //closure function for validation
 async function validation_closure(req) {
     let data_block = {
@@ -64,9 +27,10 @@ async function validation_closure(req) {
         ip_color: (req.body.ip_color || "").trim(),
         menu_color: (req.body.menu_color || "").trim(),
         original_scale: (req.body.original_scale || "").trim(),
+        title_color: (req.body.title_color || "").trim()
     }
     let error_block = [];
-    if (data_block.name === "" || data_block.name.length > NAME_LENGTH_MAX || data_block.name.length < NAME_LENGTH_MIN) {
+    if (data_block.name === "" || data_block.name.length > TITLE_LENGTH_MAX || data_block.name.length < TITLE_LENGTH_MIN) {
         error_block.push("name");
     }
 
@@ -108,6 +72,118 @@ async function validation_closure(req) {
     //returns the outcome
     return { "error_block": error_block, "data_block": data_block };
 }
+
+let validation_closure_2 = async function (req) {
+    let data_block = {
+        catalog_name: (req.body.catalog_name || "").trim(),
+        product_input: req.body.product_input || '[]',
+        title: (req.body.title || "").trim()
+    }
+    let error_block = [];
+    if (data_block.catalog_name === "" || data_block.catalog_name.length > NAME_LENGTH_MAX || data_block.catalog_name.length < NAME_LENGTH_MIN) {
+        error_block.push("name");
+    };
+
+    //validate product input
+    data_block.product_input = JSON.parse(data_block.product_input);
+    if (!Array.isArray(data_block.product_input)) {
+        error_block.push("products");
+    } else {
+        if (data_block.product_input.length === 0 || data_block.product_input.length > MAX_TWEAKPANES) {
+            error_block.push("products");
+        } else {
+            for (let product_id of data_block.product_input) {
+                if (isNaN(Number(product_id))) {
+                    error_block.push("products");
+                    break;
+                }
+            }
+        }
+    }
+    data_block.title = JSON.parse(data_block.title);
+    data_block.title.antraste = (data_block.title.antraste || "").trim();
+    if (data_block.title.antraste === "" || data_block.title.antraste > NAME_LENGTH_MAX || data_block.title.antraste < NAME_LENGTH_MIN) {
+        error_block.push("title");
+    }
+    data_block.title.r = Math.round((Number(data_block.title.r) + Number.EPSILON) * 1000) / 1000;
+    data_block.title.g = Math.round((Number(data_block.title.g) + Number.EPSILON) * 1000) / 1000;
+    data_block.title.b = Math.round((Number(data_block.title.b) + Number.EPSILON) * 1000) / 1000;
+
+    return { "error_block": error_block, "data_block": data_block };
+}
+
+//function to create a catalog
+const create_catalog = async (req, res) => {
+    //retrieves the products, models, cubemaps, ambient lights and interest points from the database
+    let products = await general_func.retrieve_query(`SELECT products.id, products.ip_color, products.arrows, products.menu, products.model_id, products.cubemap_id, products.name, products.description, products.price, products.item_scale, products.original_scale FROM products INNER JOIN 
+        user_products ON user_products.PRODUCT_ID = products.ID WHERE user_products.USER_ID = ?`, [req.session.ID]);
+    let models = {};
+    let cubemaps = {};
+    let ambient_lights = {};
+    let interest_points = {};
+    let spotlights = {};
+    let products_keyed = {};
+    for (let product of products) {
+        models[product.id] = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [product.model_id]);
+        cubemaps[product.id] = await general_func.retrieve_query('SELECT cubemap_folder FROM cubemaps WHERE id = ?', [product.cubemap_id]);
+        ambient_lights[product.id] = await general_func.retrieve_query(`SELECT ambient_lights.intensity, ambient_lights.RGB FROM ambient_lights INNER JOIN product_ambient_lights ON
+         product_ambient_lights.AL_ID = ambient_lights.id WHERE product_ambient_lights.PRODUCT_ID = ?`, [product.id]);
+        interest_points[product.id] = await general_func.retrieve_query(`SELECT interest_points.XYZ, interest_points.camera_XYZ, interest_points.text, interest_points.header FROM interest_points INNER JOIN product_interest_points ON
+         product_interest_points.IP_ID = interest_points.id WHERE product_interest_points.PRODUCT_ID = ?`, [product.id]);
+        spotlights[product.id] = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
+         product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
+        products_keyed[product.id] = product;
+        products_keyed[product.id].description = sanitizeHtml(products_keyed[product.id].description).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        products_keyed[product.id].name = sanitizeHtml(products_keyed[product.id].name).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        interest_points[product.id].forEach(ip => {
+            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
+            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        });
+    }
+    let errors = req.session.errors;
+    req.session.errors = null;
+    res.render('catalog_system/create_catalog', { title: 'Create Catalog', products: products, models: models, cubemaps: cubemaps, ambient_lights: ambient_lights, interest_points: interest_points, spotlights: spotlights, keyed_products: products_keyed, errors: errors });
+}
+//function to save the catalog to the database
+const create_catalog_post = async (req, res) => {
+    try {
+        let { error_block, data_block } = await validation_closure_2(req);
+        if (error_block.length > 0) {
+            req.session.errors = error_block;
+            await req.session.save();
+            res.redirect('/catalog/create');
+        }
+        else {
+            let RGB = data_block.title.r.toString() + ", " + data_block.title.g.toString() + ", " + data_block.title.b.toString();
+
+            let dark;
+            if (data_block.title.juodos_raides === true) { dark = "dark"; }
+            else { dark = "light"; }
+
+            let id = await general_func.insert_query_get_ID(`INSERT INTO catalogs (CATALOG_NAME, RGB, HEADER, DARK_LETTERS) VALUES(?,?,?,?)`, [data_block.catalog_name, RGB, data_block.title.antraste, dark]);
+            await general_func.insert_query(`INSERT INTO user_catalogs (USER_ID, CATALOG_ID) VALUES(?,?)`, [req.session.ID, id]);
+            for (let product_id of data_block.product_input) {
+                await general_func.insert_query(`INSERT INTO catalog_products (CATALOG_ID, PRODUCT_ID) VALUES(?,?)`, [id, Number(product_id)]);
+            }
+
+            res.redirect('/catalog/create');
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+//redirects to creat product page
+const create_product = async (req, res) => {
+    let models = await general_func.retrieve_query(`SELECT NAME, GLB_ID FROM models INNER JOIN users_models ON
+         models.ID = users_models.MODEL_ID WHERE users_models.USER_ID = ?`, [req.session.ID]);
+    let cubemap = await general_func.retrieve_query('SELECT * FROM cubemaps');
+    let errors = req.session.errors;
+    req.session.errors = null;
+    await req.session.save();
+    res.render('catalog_system/create_product', { title: 'Create Product', errors: errors, models: models, cubemaps: cubemap });
+}
+
 //function to save ambient lights to the database
 async function AMBIENT_LIGHTS_INSERT(light, ID) {
     let data = JSON.parse(light);
@@ -183,10 +259,12 @@ const create_product_post = async (req, res) => {
             else { data_block.ip_color = "black" }
             if (data_block.menu_color === "") { data_block.menu_color = "white" }
             else { data_block.menu_color = "black" }
+            if (data_block.title_color === "") { data_block.title_color = "white" }
+            else { data_block.title_color = "black" }
 
             let model_id = await general_func.retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [data_block.model]);
-            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, menu, model_id, cubemap_id, name, description, price, item_scale, original_scale) VALUES(?,?,?,?,?,?,?,?,?,?)`,
-                [data_block.arrow_color, data_block.ip_color, data_block.menu_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price, data_block.scale, Number(data_block.original_scale)]);
+            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, menu, model_id, cubemap_id, name, description, price, item_scale, original_scale, title_color) VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+                [data_block.arrow_color, data_block.ip_color, data_block.menu_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price, data_block.scale, Number(data_block.original_scale), data_block.title_color]);
             await write_json(req.body.ambient, AMBIENT_LIGHTS_INSERT, ID);
             await write_json(req.body.interest_point, INTEREST_POINT_INSERT, ID);
             await write_json(req.body.spotlight, SPOTLIGHT_INSERT, ID);
@@ -197,6 +275,31 @@ const create_product_post = async (req, res) => {
     catch (err) {
         console.log(err);
     }
+}
+//render the catalog 
+const load_catalog = async (req, res) => {
+    let products;
+
+    let catalog = await general_func.retrieve_query('SELECT * FROM catalogs WHERE ID = ?', [Number(req.params.id)]);
+    products = await general_func.retrieve_query(`SELECT products.id, products.ip_color, products.arrows, products.menu, products.title_color, products.model_id, products.cubemap_id, products.name, products.description, products.price, products.item_scale, products.original_scale FROM products INNER JOIN 
+        catalog_products ON catalog_products.PRODUCT_ID = products.ID WHERE catalog_products.CATALOG_ID = ?`, [Number(req.params.id)]);
+    for (let product of products) {
+        product.description = sanitizeHtml(product.description).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
+        product.name = sanitizeHtml(product.name).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        product.model = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [product.model_id]);
+        product.cubemap = await general_func.retrieve_query('SELECT cubemap_folder FROM cubemaps WHERE id = ?', [product.cubemap_id]);
+        product.ambient_lights = await general_func.retrieve_query(`SELECT ambient_lights.intensity, ambient_lights.RGB FROM ambient_lights INNER JOIN product_ambient_lights ON
+         product_ambient_lights.AL_ID = ambient_lights.id WHERE product_ambient_lights.PRODUCT_ID = ?`, [product.id]);
+        product.interest_points = await general_func.retrieve_query(`SELECT interest_points.XYZ, interest_points.camera_XYZ, interest_points.text, interest_points.header FROM interest_points INNER JOIN product_interest_points ON
+         product_interest_points.IP_ID = interest_points.id WHERE product_interest_points.PRODUCT_ID = ?`, [product.id]);
+        product.spotlights = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
+         product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
+        product.interest_points.forEach(ip => {
+            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
+            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        });
+    }
+    res.render('catalog_system/view_catalog', { title: catalog.CATALOG_NAME, products: products, catalog: catalog[0] });
 }
 //function to upload a model
 const upload_model = async (req, res) => {
@@ -247,4 +350,4 @@ const upload_model_post = async (req, res) => {
     });
 };
 
-module.exports = { create_catalog, create_product, upload_model, upload_model_post, model_dashboard, create_product_post };
+module.exports = { create_catalog, create_product, upload_model, upload_model_post, model_dashboard, create_product_post, create_catalog_post, load_catalog };

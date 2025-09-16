@@ -119,14 +119,13 @@ function initialize_array(array) {
 let settings = document.getElementById("settings_row");
 
 /*PRODUCT FUNCTION MANAGAEMENT*/
-let removed_tweakpanes = [];
 let available_tweakpanes = [];
 let tweakpane_ids = [];
 let tweakpanes = {};
 let folders = {};
 let product_ids = [];
 
-let product_input = create_input("products", "products_input");
+let product_input = create_input("product_input", "products_input");
 initialize_array(available_tweakpanes);
 /*PRODUCT FUNCTION*/
 // Add event listener to the select button
@@ -184,12 +183,16 @@ function add_product() {
         //load the description
         let parsed_data = window.keyed_products[selectedProduct];
         description_div.innerHTML = parsed_data["description"];
+        let price = document.createElement("h3");
+        price.innerText = 'Kaina: ' + parsed_data["price"] + ' €';
+        description_div.appendChild(price);
 
         //find and set the current index
         let current_index = editor.find_by_id(id);
         editor.set_current_index(current_index);
 
         //reconstruct the scene to show the newly added product
+        TWEAKPANE_AMOUNT++;
         editor.reconstruct_scene(current_index);
         update_input_element(selectedProduct);
         update_list();
@@ -226,12 +229,12 @@ document.getElementById('change_button').addEventListener('click', () => {
 
 function add_title_pane() {
     function update_input_element(input_element, antraste, spalva, juodos_raides) {
-        input_element.value = `{"antraste": ${antraste}, "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "juodos_raides": ${juodos_raides}}`;
+        input_element.value = `{"antraste": "${antraste}", "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "juodos_raides": "${juodos_raides}"}`;
     }
     //add a tweakpane for the header color
     let settings = document.getElementById("settings_row");
     let column = create_column();
-    let input_element = create_input("title_color", "title_color_input");
+    let input_element = create_input("title", "title_input");
     const pane = new Pane({ container: column });
     const PARAMS = { Spalva: { r: 1, g: 1, b: 1 }, Juodos_raides: false };
 
@@ -254,7 +257,7 @@ function add_title_pane() {
         label: 'Antraštė',
         parse: (v) => String(v),
         value: antraste,
-    }).on('change', (ev)=>{
+    }).on('change', (ev) => {
         antraste = ev.value;
         update_input_element(input_element, antraste, spalva, juodos_raides)
     })
