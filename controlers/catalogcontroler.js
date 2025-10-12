@@ -15,6 +15,26 @@ const TITLE_LENGTH_MIN = 1;
 const TITLE_LENGTH_MAX = 50;
 
 const MAX_TWEAKPANES = 15;
+
+//Pagination constants
+
+const MODELS_PAGE_ITEMS = 9;
+const PRODUCT_PAGE_ITEMS = 9;
+const CATALOG_PAGE_ITEMS = 9;
+
+const DASHBOARD_LIMIT = 20;
+
+//image constants
+
+const MIN_CATALOG_IMG = 1;
+const MAX_CATALOG_IMG = 9;
+
+const MIN_MODEL_IMG = 1;
+const MAX_MODEL_IMG = 8;
+
+const MIN_PRODUCT_IMG = 1;
+const MAX_PRODUCT_IMG = 6;
+
 //closure function for validation
 async function validation_closure(req) {
     let data_block = {
@@ -133,11 +153,11 @@ const create_catalog = async (req, res) => {
         spotlights[product.id] = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
          product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
         products_keyed[product.id] = product;
-        products_keyed[product.id].description = sanitizeHtml(products_keyed[product.id].description).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
-        products_keyed[product.id].name = sanitizeHtml(products_keyed[product.id].name).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        products_keyed[product.id].description = sanitizeHtml(products_keyed[product.id].description).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
+        products_keyed[product.id].name = sanitizeHtml(products_keyed[product.id].name).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
         interest_points[product.id].forEach(ip => {
-            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
-            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
+            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
         });
     }
     let errors = req.session.errors;
@@ -154,19 +174,21 @@ const create_catalog_post = async (req, res) => {
             res.redirect('/catalog/create');
         }
         else {
+            let illustration_id = Math.floor(Math.random() * (MAX_CATALOG_IMG - MIN_CATALOG_IMG) + MIN_CATALOG_IMG)
+
             let RGB = data_block.title.r.toString() + ", " + data_block.title.g.toString() + ", " + data_block.title.b.toString();
 
             let dark;
-            if (data_block.title.juodos_raides === true) { dark = "dark"; }
-            else { dark = "light"; }
+            if (data_block.title.juodos_raides == 'true') { dark = "black"; }
+            else { dark = "white"; }
 
-            let id = await general_func.insert_query_get_ID(`INSERT INTO catalogs (CATALOG_NAME, RGB, HEADER, DARK_LETTERS) VALUES(?,?,?,?)`, [data_block.catalog_name, RGB, data_block.title.antraste, dark]);
+            let id = await general_func.insert_query_get_ID(`INSERT INTO catalogs (CATALOG_NAME, RGB, HEADER, DARK_LETTERS, ILLUSTRATION) VALUES(?,?,?,?,?)`, [data_block.catalog_name, RGB, data_block.title.antraste, dark, illustration_id]);
             await general_func.insert_query(`INSERT INTO user_catalogs (USER_ID, CATALOG_ID) VALUES(?,?)`, [req.session.ID, id]);
             for (let product_id of data_block.product_input) {
                 await general_func.insert_query(`INSERT INTO catalog_products (CATALOG_ID, PRODUCT_ID) VALUES(?,?)`, [id, Number(product_id)]);
             }
 
-            res.redirect('/catalog/create');
+            res.redirect('/catalog/dashboard/0/none');
         }
     }
     catch (err) {
@@ -252,6 +274,7 @@ const create_product_post = async (req, res) => {
             res.redirect('/product/create');
         }
         else {
+            let illustration_id = Math.floor(Math.random() * (MAX_PRODUCT_IMG - MIN_PRODUCT_IMG) + MIN_PRODUCT_IMG)
             //assign color based on checkmark
             if (data_block.arrow_color === "") { data_block.arrow_color = "white" }
             else { data_block.arrow_color = "black" }
@@ -263,13 +286,13 @@ const create_product_post = async (req, res) => {
             else { data_block.title_color = "black" }
 
             let model_id = await general_func.retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [data_block.model]);
-            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, menu, model_id, cubemap_id, name, description, price, item_scale, original_scale, title_color) VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
-                [data_block.arrow_color, data_block.ip_color, data_block.menu_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price, data_block.scale, Number(data_block.original_scale), data_block.title_color]);
+            let ID = await general_func.insert_query_get_ID(`INSERT INTO products (arrows, ip_color, menu, model_id, cubemap_id, name, description, price, item_scale, original_scale, title_color, ILLUSTRATION) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+                [data_block.arrow_color, data_block.ip_color, data_block.menu_color, model_id[0]["ID"], Number(data_block.background), data_block.name, data_block.description, data_block.price, data_block.scale, Number(data_block.original_scale), data_block.title_color, illustration_id]);
             await write_json(req.body.ambient, AMBIENT_LIGHTS_INSERT, ID);
             await write_json(req.body.interest_point, INTEREST_POINT_INSERT, ID);
             await write_json(req.body.spotlight, SPOTLIGHT_INSERT, ID);
             general_func.insert_query(`INSERT INTO user_products (USER_ID, PRODUCT_ID) VALUES(?,?)`, [req.session.ID, ID])
-            res.redirect('/product/create');
+            res.redirect('/product/dashboard/0/none');
         }
     }
     catch (err) {
@@ -284,8 +307,8 @@ const load_catalog = async (req, res) => {
     products = await general_func.retrieve_query(`SELECT products.id, products.ip_color, products.arrows, products.menu, products.title_color, products.model_id, products.cubemap_id, products.name, products.description, products.price, products.item_scale, products.original_scale FROM products INNER JOIN 
         catalog_products ON catalog_products.PRODUCT_ID = products.ID WHERE catalog_products.CATALOG_ID = ?`, [Number(req.params.id)]);
     for (let product of products) {
-        product.description = sanitizeHtml(product.description).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
-        product.name = sanitizeHtml(product.name).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+        product.description = sanitizeHtml(product.description).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
+        product.name = sanitizeHtml(product.name).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
         product.model = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [product.model_id]);
         product.cubemap = await general_func.retrieve_query('SELECT cubemap_folder FROM cubemaps WHERE id = ?', [product.cubemap_id]);
         product.ambient_lights = await general_func.retrieve_query(`SELECT ambient_lights.intensity, ambient_lights.RGB FROM ambient_lights INNER JOIN product_ambient_lights ON
@@ -295,8 +318,8 @@ const load_catalog = async (req, res) => {
         product.spotlights = await general_func.retrieve_query(`SELECT spotlights.intensity, spotlights.distance, spotlights.RGB, spotlights.XYZ, spotlights.penumbra, spotlights.angle FROM spotlights INNER JOIN product_spotlights ON
          product_spotlights.SPOTLIGHT_ID = spotlights.id WHERE product_spotlights.PRODUCT_ID = ?`, [product.id]);
         product.interest_points.forEach(ip => {
-            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '<br>').replace(/(\t)/g, ' ');
-            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, ' ').replace(/(\t)/g, ' ');
+            ip.text = sanitizeHtml(ip.text).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
+            ip.header = sanitizeHtml(ip.header).replace(/(\r\n|\n)/g, '').replace(/(\t)/g, '');
         });
     }
     res.render('catalog_system/view_catalog', { title: catalog.CATALOG_NAME, products: products, catalog: catalog[0] });
@@ -308,10 +331,158 @@ const upload_model = async (req, res) => {
     await req.session.save();
     res.render('catalog_system/upload_model', { title: 'Upload Model', errors: errors });
 }
-//function to handle the dashboard
-const model_dashboard = (req, res) => {
-    res.render('catalog_system/model_dashboard', { title: "Models" });
+//function to handle filtering 
+async function filter(req, ID_FILTER_DESC, ID_FILTER_ASC, NAME_FILTER_ASC, NAME_FILTER_DESC) {
+    let ORDER_BY;
+    let FILTER;
+
+    if (req.params.filter && req.params.filter !== 'none') {
+        req.session.FILTER = req.params.filter;
+        ORDER_BY = req.params.filter;
+    } else if (req.params.filter === 'none') {
+        req.session.FILTER = null;
+        ORDER_BY = 'none';
+    } else if (req.session.FILTER) {
+        ORDER_BY = req.session.FILTER;
+    } else {
+        ORDER_BY = 'none';
+    }
+    await req.session.save();
+
+    switch (ORDER_BY) {
+        case "newest": FILTER = ID_FILTER_DESC; break;
+        case "oldest": FILTER = ID_FILTER_ASC; break;
+        case "a-z": FILTER = NAME_FILTER_ASC; break;
+        case "z-a": FILTER = NAME_FILTER_DESC; break;
+        default: FILTER = ID_FILTER_DESC; break;
+    }
+
+    return { "ORDER_BY": ORDER_BY, "FILTER": FILTER };
 }
+//function to handle pagination
+async function pagination(req, length) {
+    length = Number(length[0]["row_count"]);
+    let page_amount = Math.ceil(length / MODELS_PAGE_ITEMS);
+    if (req.params.page > page_amount) { req.params.page = 0 }
+    if (req.params.page < 0) { req.params.page = 0 };
+    let OFFSET = req.params.page * MODELS_PAGE_ITEMS;
+
+    return { "page_amount": page_amount, "OFFSET": OFFSET }
+}
+//function to handle the dashboard of models
+const model_dashboard = async (req, res) => {
+    let length = await general_func.retrieve_query(`SELECT count(*) row_count from models 
+        INNER JOIN users_models ON models.ID  = users_models.MODEL_ID where users_models.USER_ID = ? ORDER BY models.ID`, [req.session.ID]);
+    let { page_amount, OFFSET } = await pagination(req, length);
+    let { ORDER_BY, FILTER } = await filter(req, "models.ID DESC", "models.ID ASC", "models.NAME ASC", "models.NAME DESC");
+    let error = req.session.errors;
+    req.session.errors = null;
+    await req.session.save();
+    let user_models = await general_func.retrieve_query(`SELECT models.ID, models.NAME, users.IMAGE_ID, models.ILLUSTRATION from models 
+        INNER JOIN users_models ON models.ID  = users_models.MODEL_ID
+        INNER JOIN users ON users_models.USER_ID = users.ID where users_models.USER_ID = ? ORDER BY ${FILTER} LIMIT ? OFFSET ?`, [req.session.ID, MODELS_PAGE_ITEMS, OFFSET]);
+    res.render('catalog_system/view_models', { title: "Model dashboard", models: user_models, pages: page_amount, applied_filter: ORDER_BY, errors: error });
+}
+//function to handle the dashboard of products
+const product_dashboard = async (req, res) => {
+    let length = await general_func.retrieve_query(`SELECT count(*) row_count from products 
+        INNER JOIN user_products ON products.id = user_products.PRODUCT_ID where user_products.USER_ID= ? ORDER BY products.id`, [req.session.ID]);
+    let { page_amount, OFFSET } = await pagination(req, length);
+    let { ORDER_BY, FILTER } = await filter(req, "products.id DESC", "products.id ASC", "products.name ASC", "products.name DESC");
+    let error = req.session.errors;
+    req.session.errors = null;
+    await req.session.save();
+    let user_products = await general_func.retrieve_query(`SELECT products.id, products.ILLUSTRATION, users.IMAGE_ID, products.name from products
+        INNER JOIN user_products ON products.id = user_products.PRODUCT_ID
+        INNER JOIN users ON user_products.USER_ID = users.ID where user_products.USER_ID = ? ORDER BY ${FILTER} LIMIT ? OFFSET ?`, [req.session.ID, PRODUCT_PAGE_ITEMS, OFFSET]);
+    res.render('catalog_system/view_products', { title: "Product dashboard", products: user_products, pages: page_amount, applied_filter: ORDER_BY, errors: error });
+}
+//function to handle the dashboard of products
+const catalog_dashboard = async (req, res) => {
+    let length = await general_func.retrieve_query(`SELECT count(*) row_count from catalogs 
+        INNER JOIN user_catalogs ON catalogs.id = user_catalogs.CATALOG_ID where user_catalogs.USER_ID= ? ORDER BY catalogs.id`, [req.session.ID]);
+    let { page_amount, OFFSET } = await pagination(req, length);
+    let { ORDER_BY, FILTER } = await filter(req, "catalogs.id DESC", "catalogs.id ASC", "catalogs.CATALOG_NAME ASC", "catalogs.CATALOG_NAME DESC");
+
+    let user_catalogs = await general_func.retrieve_query(`SELECT catalogs.id, catalogs.ILLUSTRATION, users.IMAGE_ID, catalogs.CATALOG_NAME from catalogs
+        INNER JOIN user_catalogs ON catalogs.id = user_catalogs.CATALOG_ID 
+        INNER JOIN users ON user_catalogs.USER_ID = users.ID where user_catalogs.USER_ID = ? ORDER BY ${FILTER} LIMIT ? OFFSET ?`, [req.session.ID, CATALOG_PAGE_ITEMS, OFFSET]);
+    res.render('catalog_system/view_catalogs', { title: "Catalog dashboard", catalogs: user_catalogs, pages: page_amount, applied_filter: ORDER_BY });
+}
+//function to display latest catalogs on the dashboard
+const dashboard = async (req, res) => {
+    let catalogs = await general_func.retrieve_query(`SELECT catalogs.id, catalogs.ILLUSTRATION, catalogs.CATALOG_NAME, users.IMAGE_ID from catalogs 
+        INNER JOIN user_catalogs ON catalogs.id = user_catalogs.CATALOG_ID 
+        INNER JOIN users ON user_catalogs.USER_ID = users.ID ORDER BY catalogs.ID DESC LIMIT ?`, [DASHBOARD_LIMIT]);
+    res.render('profile_system/dashboard', { title: "Dashboard", catalogs: catalogs });
+}
+//function to delete the catalog
+const delete_catalog = async (req, res) => {
+    try {
+        let user_catalog = await general_func.retrieve_query(`SELECT * FROM user_catalogs WHERE USER_ID = ? AND CATALOG_ID = ?`, [req.session.ID, Number(req.params.id)]);
+        if (user_catalog.length > 0) {
+            await general_func.insert_query(`DELETE FROM user_catalogs WHERE CATALOG_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM catalog_products WHERE CATALOG_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM catalogs WHERE ID = ?`, [Number(req.params.id)]);
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+    finally {
+        res.redirect('/catalog/dashboard/0/none');
+    }
+}
+//function to delete the product
+const delete_product = async (req, res) => {
+    try {
+        let error = "PRODUCT_IN_CATALOG"
+        let product_in_catalog = await general_func.retrieve_query(`SELECT * FROM catalog_products WHERE PRODUCT_ID = ?`, [Number(req.params.id)]);
+        let user_product = await general_func.retrieve_query(`SELECT * FROM user_products WHERE USER_ID = ? AND PRODUCT_ID = ?`, [req.session.ID, Number(req.params.id)]);
+        if (product_in_catalog.length > 0) {
+            req.session.errors = [error];
+            await req.session.save();
+            res.redirect('/product/dashboard/0/none');
+            return;
+        }
+        if (user_product.length > 0) {
+            await general_func.insert_query(`DELETE FROM user_products WHERE PRODUCT_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM product_ambient_lights WHERE PRODUCT_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM product_interest_points WHERE PRODUCT_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM product_spotlights WHERE PRODUCT_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM products WHERE ID = ?`, [Number(req.params.id)]);
+            res.redirect('/product/dashboard/0/none');
+            return;
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+const delete_model = async (req, res) => { 
+    try {
+        let error = "MODEL_IN_PRODUCT"
+        let model_in_product = await general_func.retrieve_query(`SELECT * FROM products WHERE model_id = ?`, [Number(req.params.id)]);
+        if (model_in_product.length > 0) {
+            req.session.errors = [error];
+            await req.session.save();
+            res.redirect('/model/dashboard/0/none');
+            return;
+        }
+        let user_model = await general_func.retrieve_query(`SELECT * FROM users_models WHERE USER_ID = ? AND MODEL_ID = ?`, [req.session.ID, Number(req.params.id)]);
+        if (user_model.length > 0) {
+            let model = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [Number(req.params.id)]);
+            await fs.unlink(path.join(__dirname, '../GLB_FILES', model[0].GLB_ID))
+            await general_func.insert_query(`DELETE FROM users_models WHERE MODEL_ID = ?`, [Number(req.params.id)]);
+            await general_func.insert_query(`DELETE FROM models WHERE ID = ?`, [Number(req.params.id)]);
+            res.redirect('/model/dashboard/0/none');
+            return;
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+} 
 //function to handle the model upload
 const upload_model_post = async (req, res) => {
     let error_block = [];
@@ -337,17 +508,18 @@ const upload_model_post = async (req, res) => {
         }
         else {
             try {
+                let illustration_id = Math.floor(Math.random() * (MAX_MODEL_IMG - MIN_MODEL_IMG) + MIN_MODEL_IMG);
                 let GLB_ID = req.file.filename;
-                await general_func.insert_query(`INSERT INTO models (NAME, GLB_ID) VALUES(?,?)`, [text, GLB_ID]);
+                await general_func.insert_query(`INSERT INTO models (NAME, GLB_ID, ILLUSTRATION) VALUES(?,?,?)`, [text, GLB_ID, illustration_id]);
                 let GLB = await general_func.retrieve_query(`SELECT ID FROM models WHERE GLB_ID = ?`, [GLB_ID]);
                 await general_func.insert_query(`INSERT INTO users_models (USER_ID, MODEL_ID) VALUES(?,?)`, [req.session.ID, GLB[0].ID]);
             }
             catch (err) {
                 console.log(err);
             }
-            res.redirect('/model/dashboard');
+            res.redirect('/model/dashboard/0/none');
         }
     });
 };
 
-module.exports = { create_catalog, create_product, upload_model, upload_model_post, model_dashboard, create_product_post, create_catalog_post, load_catalog };
+module.exports = { create_catalog, create_product, upload_model, upload_model_post, model_dashboard, create_product_post, create_catalog_post, load_catalog, product_dashboard, catalog_dashboard, dashboard, delete_catalog, delete_product, delete_model };

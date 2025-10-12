@@ -6,7 +6,7 @@ const router = express.Router();
 //**PROFILE SYSTEM**
 
 //Main dashboard
-router.get('/dashboard', maincontroler.dashboard);
+router.get('/dashboard', catalogcontroler.dashboard);
 //Edit profile routes
 router.get('/edit', maincontroler.edit);
 router.post('/edit', maincontroler.edit_post);
@@ -33,5 +33,15 @@ router.post('/product/create', catalogcontroler.create_product_post)
 router.get('/model/upload_model', catalogcontroler.upload_model);
 router.post('/model/upload_model', catalogcontroler.upload_model_post);
 //Model dashboard
-router.get('/model/dashboard', catalogcontroler.model_dashboard);
+router.get('/model/dashboard/:page/:filter', catalogcontroler.model_dashboard);
+//Product dashboard
+router.get('/product/dashboard/:page/:filter', catalogcontroler.product_dashboard);
+//Catalog dashboard
+router.get('/catalog/dashboard/:page/:filter', catalogcontroler.catalog_dashboard);
+//delete a catalog 
+router.get('/catalog/delete/:id', catalogcontroler.delete_catalog);
+//delete a product
+router.get('/product/delete/:id', catalogcontroler.delete_product);
+//delete a model
+router.get('/model/delete/:id', catalogcontroler.delete_model);
 module.exports = router;

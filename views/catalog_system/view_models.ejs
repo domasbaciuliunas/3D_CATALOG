@@ -1,0 +1,77 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<div class="container">
+
+  <!-- Filtravimas -->
+  <div class="my-3 input-group">
+    <button type="button" id="filter_button" class="btn btn-dark">Filtruoti</button>
+    <select name="filter" class="form-control" id="filter">
+      <option value="newest">Naujausi</option>
+      <option value="oldest">Seniausi</option>
+      <option value="a-z">Abėcėlės tvarka (A-Ž)</option>
+      <option value="z-a">Abėcėlės tvarka (Ž-A)</option>
+    </select>
+  </div>
+
+  <%if (errors && errors.includes("MODEL_IN_PRODUCT")) { %>
+  <span style="color:red">Modelis naudojamas produkte </span>
+  <% } %>
+
+  <div class="row row-cols-2 row-cols-md-3 g-3 my-3">
+    <% for(let model of models) { %>
+    <div class="col">
+      <div class="card">
+        <img src="/images/illustrations/models/<%=model["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-8">
+              <div style="height: 50px;" class="overflow-auto mb-2">
+                <h6 class="card-title"><%= model["NAME"] %></h6>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Veiksmas
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="/model/delete/<%=model["ID"]%>">Ištrinti</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-4">
+              <img src="/images/active_profiles/micro_icons/<%=model["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <%}%>
+    </div>
+
+<!-- Puslapiavimas-->
+<nav aria-label="Page navigation example">
+  <ul class="pagination  flex-wrap">
+    <li class="page-item">
+      <a class="page-link" href="/model/dashboard/0/<%-applied_filter %>" aria-label="Previous">
+    <span aria-hidden="true">&laquo;</span>
+    </a>
+    </li>
+    <% for(let x=0; x< pages; x++) { %>
+    <li class="page-item"><a class="page-link" href="/model/dashboard/<%= x %>/<%-applied_filter %>"><%= x+1 %></a></li>
+    <%} %>
+    <li class="page-item">
+      <a class="page-link" href="/model/dashboard/<%= pages-1 %>/<%-applied_filter %>" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+    </ul>
+    </nav>
+  </div>
+  <%- include('../partials/footer.ejs') %>
+  <script>
+    let filter_button = document.getElementById("filter_button");
+    let select = document.getElementById("filter");
+
+    filter_button.addEventListener("click", () => {
+      window.location.href = `/model/dashboard/0/${select.value}`;
+    });
+  </script>

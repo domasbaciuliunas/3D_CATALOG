@@ -33,7 +33,6 @@ class CatalogViewer extends Editor {
 
     load_items(products) {
         this.item_array = products;
-        console.log(this.item_array)
     }
 
     reconstruct_scene(index, callback) {
@@ -238,6 +237,7 @@ class CatalogViewer extends Editor {
         }
         this.camera.position.set(camera_position["x"], camera_position["y"], camera_position["z"]);
     }
+
     page_event(event) {
         const rect = this.renderer.domElement.getBoundingClientRect();
         this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;

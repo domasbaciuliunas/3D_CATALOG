@@ -179,10 +179,6 @@ const login_post = async (req, res, next) => {
         console.error(err);
     }
 }
-//function to render the dashboard
-const dashboard = async (req, res) => {
-    res.render('profile_system/dashboard', { title: "Dashboard"});
-}
 //function to render the register page
 const register = async (req, res, next) => {
     //middleware substack
@@ -325,4 +321,4 @@ const logout = (req, res) => {
     req.session.destroy();
     res.redirect('/');
 }
-module.exports = { login, register, register_post, dashboard, login_post, edit, edit_post, remove_page, remove, logout, upload_image, edit_password, edit_password_page };
+module.exports = { login, register, register_post, login_post, edit, edit_post, remove_page, remove, logout, upload_image, edit_password, edit_password_page };

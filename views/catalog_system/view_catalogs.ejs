@@ -1,0 +1,108 @@
+<%- include('../partials/head.ejs') %>
+<%- include('../partials/nav.ejs') %>
+<div class="container">
+
+  <!-- Filtravimas -->
+  <div class="my-3 input-group">
+    <button type="button" id="filter_button" class="btn btn-dark">Filtruoti</button>
+    <select name="filter" class="form-control" id="filter">
+      <option value="newest">Naujausi</option>
+      <option value="oldest">Seniausi</option>
+      <option value="a-z">Abėcėlės tvarka (A-Ž)</option>
+      <option value="z-a">Abėcėlės tvarka (Ž-A)</option>
+    </select>
+  </div>
+
+  <div class="row row-cols-2 row-cols-md-3 g-4 my-3">
+    <!-- Katalogai -->
+    <% for(let catalog of catalogs) { %>
+    <div class="col">
+      <div class="card">
+        <img src="/images/illustrations/catalogs/<%=catalog["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-8">
+              <div style="height: 50px;" class="overflow-auto mb-2">
+                <h6 class="card-title"><%= catalog["CATALOG_NAME"] %></h6>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Veiksmas
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="/catalog/created/<%=catalog["id"]%>">Peržvelgti</a></li>
+                  <li><a catalog_id="<%=catalog["id"]%>" catalog_name ="<%=catalog["CATALOG_NAME"]%>" class="dropdown-item modal_button">Dalintis</a></li>
+                  <li><a class="dropdown-item" href="">Redaguoti</a></li>
+                  <li><a class="dropdown-item" href="/catalog/delete/<%=catalog["id"]%>">Ištrinti</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-4">
+              <img src="/images/active_profiles/micro_icons/<%=catalog["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <%}%>
+    </div>
+
+  <!-- The modal -->
+  <div class="modal" id="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Dalintis katalogu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <code id="code"></code>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Uždaryti</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Puslapiavimas-->
+<nav aria-label="Page navigation example">
+  <ul class="pagination  flex-wrap">
+    <li class="page-item">
+      <a class="page-link" href="/catalog/dashboard/0/<%-applied_filter %>" aria-label="Previous">
+    <span aria-hidden="true">&laquo;</span>
+    </a>
+    </li>
+    <% for(let x=0; x< pages; x++) { %>
+    <li class="page-item"><a class="page-link" href="/catalog/dashboard//<%= x %>/<%-applied_filter %>"><%= x+1 %></a></li>
+    <%} %>
+    <li class="page-item">
+      <a class="page-link" href="/catalog/dashboard/<%= pages-1 %>/<%-applied_filter %>" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+    </ul>
+    </nav>
+  </div>
+  <%- include('../partials/footer.ejs') %>
+  <script>
+    let filter_button = document.getElementById("filter_button");
+    let select = document.getElementById("filter");
+
+    filter_button.addEventListener("click", () => {
+      window.location.href = `/catalog/dashboard/0/${select.value}`;
+    });
+
+    var myModal = new bootstrap.Modal(document.getElementById('modal'), {
+      keyboard: false
+    })
+    let modal_button = document.getElementsByClassName("modal_button");
+    for (let button of modal_button) {
+      button.addEventListener("click", () => {
+        myModal.show();
+        let code = document.getElementById("code");
+        let url = window.location.protocol + "//"+ window.location.host + `/catalog/created/${ button.getAttribute("catalog_id")}`;
+        code.innerText = `<iframe src="${url}" style="width:100%; height:700px;" title="${button.getAttribute("catalog_name")}"></iframe>`;
+      });
+    }
+  </script>

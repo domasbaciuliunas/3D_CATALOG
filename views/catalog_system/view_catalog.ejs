@@ -16,9 +16,17 @@
     <i class="fa-solid fa-x fa-xl" id="close_about_viewer" style="color: #ffffff;"></i>
   </div>
   <button type="button" id="navigation_button" class="btn btn-dark">Navigacija</button>
+  <div id="checkbox_title_page">
+    <label for="scales">Titulinis puslapis</label>
+    <input type="checkbox" id="title_page" name="title_page">
+  </div>
   <div id="navigation_menu">
   </div>
   <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon_viewer" style="color: #ffffff;"></i>
+  <div id="catalog_title_page">
+    <h1><%=catalog.HEADER%></h1>
+    <h2>Sukurta naudojantis Hybrid3D sistema</h2>
+  </div>
 </body>
 
 <script>
@@ -91,4 +99,32 @@
     })
     document.getElementById('navigation_menu').appendChild(button);
   }
+
+  //change the title page color based on the catalog RGB value
+  let title_page = document.getElementById('catalog_title_page');
+  let RGB = window.catalogs.RGB.split(",");
+  //title_page.style.backgroundColor = `rgb(${RGB[0]*1000}, ${RGB[1]*1000}, ${RGB[2]*1000})`;
+  title_page.style.backgroundImage = `linear-gradient(45deg, 
+  rgb(${RGB[0]*1000}, ${RGB[1]*1000}, ${RGB[2]*1000}) 0%, 
+  rgba(${RGB[0]*1000*0.2}, ${RGB[1]*1000*0.4}, ${RGB[2]*1000*0.4}, 0.7) 60%, 
+  rgba(${RGB[0]*1000*0.1}, ${RGB[1]*1000*0.2}, ${RGB[2]*1000*0.2}, 0.4) 100%)`;
+  let header = document.querySelector('#catalog_title_page h1');
+  let header2 = document.querySelector('#catalog_title_page h2');
+  if (window.catalogs.DARK_LETTERS == "black") {
+    header.style.color = 'black';
+    header2.style.color = 'black';
+  } else {
+    header.style.color = 'white';
+    header2.style.color = 'white';
+  }
+
+  title_page.style.display = 'none';
+  //checkbox to enable or disable the title page
+  document.getElementById('title_page').addEventListener('change', (event) => {
+    if (event.target.checked) {
+      title_page.style.display = 'block';
+    } else {
+      title_page.style.display = 'none';
+    }
+  });
 </script>
