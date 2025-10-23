@@ -103,11 +103,11 @@
   //change the title page color based on the catalog RGB value
   let title_page = document.getElementById('catalog_title_page');
   let RGB = window.catalogs.RGB.split(",");
-  //title_page.style.backgroundColor = `rgb(${RGB[0]*1000}, ${RGB[1]*1000}, ${RGB[2]*1000})`;
+  //gradient for the catalog title page
   title_page.style.backgroundImage = `linear-gradient(45deg, 
-  rgb(${RGB[0]*1000}, ${RGB[1]*1000}, ${RGB[2]*1000}) 0%, 
-  rgba(${RGB[0]*1000*0.2}, ${RGB[1]*1000*0.4}, ${RGB[2]*1000*0.4}, 0.7) 60%, 
-  rgba(${RGB[0]*1000*0.1}, ${RGB[1]*1000*0.2}, ${RGB[2]*1000*0.2}, 0.4) 100%)`;
+  rgb(${RGB[0]}, ${RGB[1]}, ${RGB[2]}) 0%, 
+  rgba(${RGB[0]}, ${RGB[1]}, ${RGB[2]}, 0.7) 60%, 
+  rgba(${RGB[0]}, ${RGB[1]}, ${RGB[2]}, 0.4) 100%)`;
   let header = document.querySelector('#catalog_title_page h1');
   let header2 = document.querySelector('#catalog_title_page h2');
   if (window.catalogs.DARK_LETTERS == "black") {

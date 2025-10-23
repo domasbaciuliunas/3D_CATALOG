@@ -67,12 +67,10 @@ select.addEventListener("change", async (listing) => {
 
 /*MASONRY CODE*/
 let masonry;
-window.addEventListener('load', () => {
-    const grid = document.querySelector('#settings_row');
-    masonry = new Masonry(grid, {
-        itemSelector: '.col-12',
-        percentPosition: true,
-    });
+const grid = document.querySelector('#settings_row');
+masonry = new Masonry(grid, {
+    itemSelector: '.col-12',
+    percentPosition: true,
 });
 
 /*INITIALIZE THE ARRAY*/
@@ -147,19 +145,19 @@ let removed_ambient = [];
 initialize_array(ambient_count);
 
 //function to add an ambient light tweakpane
-function create_ambient_light(ambient_light_panes, ambient_light_ids) {
+function create_ambient_light(ambient_light_panes, ambient_light_ids, optional_intensity, optional_RGB) {
     function update_input_element(input_element, stiprumas, spalva) {
         input_element.value = `{"intensity": ${stiprumas}, "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}}`;
     }
 
     if (TWEAKPANE_AMOUNT < MAX_TWEAKPANES) {
-        const PARAMS = { Spalva: { r: 1, g: 1, b: 1 } };
+        const PARAMS = { Spalva: { r: 255, g: 255, b: 255 } };
         const INTENSITY = 1;
         const MIN_INTENSITY = 0;
         const MAX_INTENSITY = 20;
 
-        let stiprumas = INTENSITY;
-        let spalva = PARAMS["Spalva"];
+        let stiprumas = optional_intensity ? optional_intensity : INTENSITY;
+        let spalva = optional_RGB ? optional_RGB["Spalva"] : PARAMS["Spalva"];
 
         let number = manage_space(removed_ambient, ambient_count);
         let column = create_column();
@@ -184,17 +182,13 @@ function create_ambient_light(ambient_light_panes, ambient_light_ids) {
             label: 'Stiprumas',
             min: MIN_INTENSITY,
             max: MAX_INTENSITY,
-            value: INTENSITY,
+            value: optional_intensity ? optional_intensity : INTENSITY,
         }).on('change', (ev) => {
             editor.change_ambient_light_intensity(ev.value, id);
             stiprumas = ev.value;
             update_input_element(input_element, stiprumas, spalva);
         });
-        folder.addBinding(PARAMS, 'Spalva', {
-            color: {
-                type: 'float'
-            },
-        }).on('change', (ev) => {
+        folder.addBinding(optional_RGB ? optional_RGB : PARAMS, 'Spalva').on('change', (ev) => {
             editor.change_ambient_light_color(ev.value, id);
             spalva = ev.value
             update_input_element(input_element, stiprumas, spalva);
@@ -206,12 +200,13 @@ function create_ambient_light(ambient_light_panes, ambient_light_ids) {
             editor.remove_ambient_light(id);
             remove_tweakpane(removed_ambient, ambient_light_panes, ambient_light_ids, id, column, input_element, number);
         });
-        editor.add_ambient_light("white", INTENSITY, id)
+        editor.add_ambient_light(optional_RGB ? optional_RGB["Spalva"] : PARAMS["Spalva"], optional_intensity ? optional_intensity : INTENSITY, id)
         settings.appendChild(column);
         masonry.appended(column);
         masonry.layout();
     }
 }
+
 /*SPOTLIGHT MANAGEMENT*/
 let spotlight_panes = {};
 let spotlight_ids = [];
@@ -222,13 +217,13 @@ let removed_spotlights = [];
 initialize_array(spotlight_count);
 
 //function to add an ambient light tweakpane
-function create_spotlight(spotlight_panes, spotlight_ids) {
+function create_spotlight(spotlight_panes, spotlight_ids, optional_intensity, optional_distance, optional_penumbra, optional_angle, optional_RGB, optional_coordinates) {
     function update_input_element(input_element, stiprumas, atstumas, penumbra, kampas, spalva, koordinates) {
         input_element.value = `{"intensity": ${stiprumas}, "distance": ${atstumas}, "penumbra": ${penumbra}, "angle": ${kampas}, "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "x":${koordinates.x}, "y":${koordinates.y}, "z":${koordinates.z}}`;
     }
 
     if (TWEAKPANE_AMOUNT < MAX_TWEAKPANES) {
-        const PARAMS = { Spalva: { r: 1, g: 1, b: 1 }, Koordinatės: { x: 0, y: 10, z: 0 } };
+        const PARAMS = { Spalva: { r: 255, g: 255, b: 255 }, Koordinatės: { x: 0, y: 10, z: 0 } };
         const INTENSITY = 1000;
         const MIN_INTENSITY = 0;
         const MAX_INTENSITY = 3000;
@@ -242,12 +237,12 @@ function create_spotlight(spotlight_panes, spotlight_ids) {
         const PENUMBRA = 0;
         const ANGLE = 90;
 
-        let koordinates = PARAMS["Koordinatės"];
-        let spalva = PARAMS["Spalva"];
-        let stiprumas = INTENSITY;
-        let atstumas = DISTANCE;
-        let penumbra = PENUMBRA;
-        let kampas = ANGLE;
+        let koordinates = optional_coordinates ? optional_coordinates["Koordinatės"] : PARAMS["Koordinatės"];
+        let spalva = optional_RGB ? optional_RGB["Spalva"] : PARAMS["Spalva"];
+        let stiprumas = optional_intensity ? optional_intensity : INTENSITY;
+        let atstumas = optional_distance ? optional_distance : DISTANCE;
+        let penumbra = optional_penumbra ? optional_penumbra : PENUMBRA;
+        let kampas = optional_angle ? optional_angle : ANGLE;
 
         let number = manage_space(removed_spotlights, spotlight_count);
         let column = create_column();
@@ -272,30 +267,29 @@ function create_spotlight(spotlight_panes, spotlight_ids) {
             label: 'Stiprumas',
             min: MIN_INTENSITY,
             max: MAX_INTENSITY,
-            value: INTENSITY,
+            value: optional_intensity ? optional_intensity : INTENSITY,
         }).on('change', (ev) => {
             editor.change_spotlight_intensity(ev.value, id);
             stiprumas = ev.value;
             update_input_element(input_element, stiprumas, atstumas, penumbra, kampas, spalva, koordinates);
         });
-        folder.addBinding(PARAMS, 'Spalva', {
-            color: {
-                type: 'float'
-            },
-        }).on('change', (ev) => {
+        folder.addBinding(optional_RGB ? optional_RGB : PARAMS, 'Spalva').on('change', (ev) => {
             editor.change_spotlight_color(ev.value, id);
             spalva = ev.value;
             update_input_element(input_element, stiprumas, atstumas, penumbra, kampas, spalva, koordinates);
         });
-        folder.addBinding(PARAMS, 'Koordinatės').on('change', (ev) => {
+        folder.addBinding(optional_coordinates ? optional_coordinates : PARAMS, 'Koordinatės').on('change', (ev) => {
+            koordinates = ev.value;
             editor.change_spotlight_coordinates(ev.value, id);
+            update_input_element(input_element, stiprumas, atstumas, penumbra, kampas, spalva, koordinates);
+            spotlight_panes[id].refresh();
         });
         folder.addBlade({
             view: 'slider',
             label: 'Atstumas',
             min: MIN_DISTANCE,
             max: MAX_DISTANCE,
-            value: DISTANCE,
+            value: optional_distance ? optional_distance : DISTANCE,
         }).on('change', (ev) => {
             editor.change_spotlight_distance(ev.value, id);
             atstumas = ev.value;
@@ -306,7 +300,7 @@ function create_spotlight(spotlight_panes, spotlight_ids) {
             label: 'Penumbra',
             min: MIN_PENUMBRA,
             max: MAX_PENUMBRA,
-            value: PENUMBRA,
+            value: optional_penumbra ? optional_penumbra : PENUMBRA,
         }).on('change', (ev) => {
             editor.change_spotlight_penumbra(ev.value, id);
             penumbra = ev.value;
@@ -317,7 +311,7 @@ function create_spotlight(spotlight_panes, spotlight_ids) {
             label: 'Kampas',
             min: MIN_ANGLE,
             max: MAX_ANGLE,
-            value: ANGLE,
+            value: optional_angle ? optional_angle : ANGLE,
         }).on('change', (ev) => {
             editor.change_spotlight_angle(ev.value, id);
             kampas = ev.value;
@@ -330,7 +324,9 @@ function create_spotlight(spotlight_panes, spotlight_ids) {
             remove_tweakpane(removed_spotlights, spotlight_panes, spotlight_ids, id, column, input_element, number);
             editor.remove_spotlight(id);
         });
-        editor.add_spotlight("white", INTENSITY, DISTANCE, Math.PI / 2, PENUMBRA, { x: 0, y: 10, z: 0 }, id);
+        editor.add_spotlight(optional_RGB ? optional_RGB["Spalva"] : PARAMS["Spalva"], optional_intensity ? optional_intensity : INTENSITY,
+            optional_distance ? optional_distance : DISTANCE, optional_angle ? optional_angle * (Math.PI/180) : Math.PI / 2,
+            optional_penumbra ? optional_penumbra : PENUMBRA, koordinates, id);
         settings.appendChild(column);
         masonry.appended(column);
         masonry.layout();
@@ -359,23 +355,27 @@ let interest_point_params = {};
 
 //initialize the max possible interest_point_count
 initialize_array(interest_point_count)
-function create_interest_point(interest_point_panes, interest_point_ids) {
+function create_interest_point(interest_point_panes, interest_point_ids, optional_title, optional_description, optional_coordinates, optional_camera_pos) {
     function update_input_element(input_element, koordinates, tekstas, antraste, camera_pos) {
-        input_element.value = `{"x": ${koordinates.x}, "y": ${koordinates.y}, "z": ${koordinates.z}, "text": "${tekstas}", "header" : "${antraste}", "camera_x" : ${camera_pos.x}, "camera_y" : ${camera_pos.y}, "camera_z" : ${camera_pos.z}}`;
+        input_element.value = `{"x": ${koordinates.x}, "y": ${koordinates.y}, "z": ${koordinates.z}, "text": "${tekstas.replace(/[\\\s]/g, ' ').replace(/"/g, `''`)}", "header" : "${antraste.replace(/[\\\s]/g, ' ').replace(/"/g, `''`)}", "camera_x" : ${camera_pos.x}, "camera_y" : ${camera_pos.y}, "camera_z" : ${camera_pos.z}}`;
     }
     const PARAMS = { Koordinatės: { x: 0, y: 0, z: 0 } };
     const TEKSTAS = "Įveskite tekstą";
     const ANTRASTE = "Įveskite antraštę";
 
-    let tekstas = TEKSTAS;
-    let antraste = ANTRASTE;
+    let tekstas = optional_description ? optional_description : TEKSTAS;
+    let antraste = optional_title ? optional_title : ANTRASTE;
+    if (optional_coordinates) {
+        PARAMS["Koordinatės"] = optional_coordinates["Koordinatės"];
+    }
     let koordinates = PARAMS["Koordinatės"];
-    let kameros_pozicija = { "x": 0, "y": 0, "z": 30 };
+    let kameros_pozicija = optional_camera_pos ? optional_camera_pos : { "x": 0, "y": 0, "z": 30 };
 
     let number = manage_space(removed_interest_points, interest_point_count);
     let column = create_column();
     let id = crypto.randomUUID();
     interest_point_ids.push(id);
+    if (optional_camera_pos) { editor.add_interestPoint_at_position(id, optional_coordinates["Koordinatės"], ip_color_state) }
     let input_element = create_input("interest_point", id);
     update_input_element(input_element, koordinates, tekstas, antraste, kameros_pozicija);
     interest_point_panes[id] = new Pane({ container: column });
@@ -399,7 +399,7 @@ function create_interest_point(interest_point_panes, interest_point_ids) {
         view: 'text',
         label: 'Antraštė',
         parse: (v) => String(v),
-        value: 'Įveskite antraštę',
+        value: optional_title ? optional_title : 'Įveskite antraštę',
     }).on("change", (ev) => {
         antraste = ev.value
         interest_point_params[id].antraste = antraste;
@@ -409,7 +409,7 @@ function create_interest_point(interest_point_panes, interest_point_ids) {
         view: 'text',
         label: 'Tekstas',
         parse: (v) => String(v),
-        value: 'Įveskite tekstą',
+        value: optional_description ? optional_description : 'Įveskite tekstą',
     }).on("change", (ev) => {
         tekstas = ev.value
         interest_point_params[id].tekstas = tekstas;
@@ -429,7 +429,6 @@ function create_interest_point(interest_point_panes, interest_point_ids) {
             update_input_element(input_element, koordinates, tekstas, antraste, kameros_pozicija);
             interest_point_panes[id].refresh();
         }, ip_color_state);
-
     });
     const btn = interest_point_panes[id].addButton({
         title: 'Ištrinti',
@@ -455,13 +454,17 @@ const DEFAULT_SCALE = 5;
 let scale_form = document.getElementById("scale_form");
 let original_scale = document.getElementById("original_scale");
 
+let optional_size;
+if (window.products && window.products.item_scale) {
+    optional_size = window.products.item_scale;
+}
 //creates the params for the tweakpane
-const PARAMS = {
-    Dydis: DEFAULT_SCALE
+let PARAMS = {
+    Dydis: optional_size ? optional_size : DEFAULT_SCALE
 };
 
 //writes the size to the hidden forms
-original_scale.value = PARAMS["Dydis"];
+original_scale.value = DEFAULT_SCALE;
 scale_form.value = PARAMS["Dydis"];
 
 //creates a new tweakpane called size_pane, sets the container as "settings" dom element
@@ -517,3 +520,66 @@ let Interest_button = document.getElementById("interest_point");
 Interest_button.addEventListener("click", () => {
     create_interest_point(interest_point_panes, interest_point_ids);
 });
+
+if (window.products) {
+    /*LOAD EXISTING DATA FROM THE PRODUCT*/
+    //change the arrow color based on checkbox state
+    if (arrow_checkbox.checked) {
+        editor.change_arrow_color("black");
+    } else {
+        editor.change_arrow_color("white");
+    }
+
+    //change the ip color based on checkbox state
+    if (ip_color.checked) {
+        editor.change_interestpoint_color("black");
+    } else {
+        editor.change_interestpoint_color("white");
+    }
+
+    //change the menu icon color based on checkbox state
+    if (document.getElementById('menu_color').checked) {
+        document.getElementById("open_icon").style.color = "black";
+    } else {
+        document.getElementById("open_icon").style.color = "white";
+    }
+
+    //change the cubemap
+    editor.change_background(background.options[background.selectedIndex].text);
+}
+//loading operations for the editing procedures
+let products = window.products;
+if (products) {
+    //load the model based on selection
+    let value = document.getElementById("models").value;
+    editor.remove_GLB();
+    editor.add_GLB("/GLB_FILES/", value, DEFAULT_SCALE , () => {
+        size_pane.hidden = false;
+        size_pane.refresh();
+
+        //load the interest points after the model is loaded
+        for (let interest_point of window.interest_points) {
+            console.log(interest_point);
+            let ip_coordinates = interest_point.XYZ.split(",");
+            interest_point.XYZ = { Koordinatės: { x: Number(ip_coordinates[0]), y: Number(ip_coordinates[1]), z: Number(ip_coordinates[2]) } };
+            let camera_coords = interest_point.camera_XYZ.split(",");
+            interest_point.camera_XYZ = { x: Number(camera_coords[0]), y: Number(camera_coords[1]), z: Number(camera_coords[2]) }
+            create_interest_point(interest_point_panes, interest_point_ids, interest_point.header, interest_point.text, interest_point.XYZ, interest_point.camera_XYZ);
+        }
+    }, products.item_scale);
+    //load existing spotlights
+    for (let spotlight of window.spotlights) {
+        let spotlights = spotlight.RGB.split(",");
+        let xyz = spotlight.XYZ.split(",");
+        spotlight.XYZ = { Koordinatės: { x: Number(xyz[0]), y: Number(xyz[1]), z: Number(xyz[2]) } };
+        spotlight.RGB = { Spalva: { r: Number(spotlights[0]), g: Number(spotlights[1]), b: Number(spotlights[2]) } };
+        create_spotlight(spotlight_panes, spotlight_ids, spotlight.intensity, spotlight.distance, spotlight.penumbra, spotlight.angle, spotlight.RGB, spotlight.XYZ);
+    }
+    //load existing ambient lights 
+    for (let ambient_light of window.ambient_lights) {
+        let ambient_lights = ambient_light.RGB.split(",");
+        ambient_light.RGB = { Spalva: { r: Number(ambient_lights[0]), g: Number(ambient_lights[1]), b: Number(ambient_lights[2]) } };
+        create_ambient_light(ambient_light_panes, ambient_light_ids, ambient_light.intensity, ambient_light.RGB);
+    }
+
+}

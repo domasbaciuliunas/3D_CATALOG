@@ -65,7 +65,8 @@ class CatalogViewer extends Editor {
                 let ambient_light_colors = ambient_light.RGB.split(",");
                 ambient_light_colors = { r: Number(ambient_light_colors[0]), g: Number(ambient_light_colors[1]), b: Number(ambient_light_colors[2]) };
                 let AmbientLight = new ambientLight("white", ambient_light.intensity);
-                AmbientLight.ambientLight.color.setRGB(ambient_light_colors.r, ambient_light_colors.g, ambient_light_colors.b);
+                let ambColor = new THREE.Color(`rgb(${ambient_light_colors.r}, ${ambient_light_colors.g}, ${ambient_light_colors.b})`);
+                AmbientLight.ambientLight.color.set(ambColor);
                 AmbientLight.add_to_scene(this.scene);
                 this.ambientLights[`${crypto.randomUUID()}`] = AmbientLight;
             }
@@ -82,7 +83,8 @@ class CatalogViewer extends Editor {
                 const pi = Math.PI;
                 let radians = spotlight.angle * (pi / 180);
                 let SpotLight = new spotLight("white", spotlight.intensity, spotlight.distance, radians, spotlight.penumbra, spotlight_position);
-                SpotLight.spotLight.color.setRGB(spotlight_colors.r, spotlight_colors.g, spotlight_colors.b);
+                let spotColor = new THREE.Color(`rgb(${spotlight_colors.r}, ${spotlight_colors.g}, ${spotlight_colors.b})`);
+                SpotLight.spotLight.color.set(spotColor);
                 SpotLight.add_to_scene(this.scene);
                 this.spotlights[`${crypto.randomUUID()}`] = SpotLight;
             }

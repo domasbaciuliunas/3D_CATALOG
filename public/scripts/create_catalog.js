@@ -129,12 +129,12 @@ let product_input = create_input("product_input", "products_input");
 initialize_array(available_tweakpanes);
 /*PRODUCT FUNCTION*/
 // Add event listener to the select button
-function add_product() {
+function add_product(optional_id, optional_name) {
 
     //get the product selector
     let productSelect = document.getElementById('products');
-    let selectedProduct = productSelect.value;
-    let product_name = productSelect.options[productSelect.selectedIndex].text;
+    let selectedProduct = optional_id ? optional_id : productSelect.value;
+    let product_name = optional_name ? optional_name : productSelect.options[productSelect.selectedIndex].text;
 
     function update_input_element(product_id) {
         product_ids.push(product_id);
@@ -177,7 +177,7 @@ function add_product() {
             window.cubemaps[selectedProduct],
             window.keyed_products[selectedProduct],
             id,
-            productSelect.options[productSelect.selectedIndex].text
+            optional_name ? optional_name : productSelect.options[productSelect.selectedIndex].text
         );
 
         //load the description
@@ -227,7 +227,7 @@ document.getElementById('change_button').addEventListener('click', () => {
     update_list();
 });
 
-function add_title_pane() {
+function add_title_pane(optional_title, optional_color, optional_black_letters) {
     function update_input_element(input_element, antraste, spalva, juodos_raides) {
         input_element.value = `{"antraste": "${antraste}", "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "juodos_raides": "${juodos_raides}"}`;
     }
@@ -236,11 +236,11 @@ function add_title_pane() {
     let column = create_column();
     let input_element = create_input("title", "title_input");
     const pane = new Pane({ container: column });
-    const PARAMS = { Spalva: { r: 1, g: 1, b: 1 }, Juodos_raides: false };
+    const PARAMS = { Spalva: { r: 255, g: 255, b: 255 }, Juodos_raides: false };
 
-    let antraste = "Įveskite antraštę";
-    let spalva = PARAMS.Spalva
-    let juodos_raides = PARAMS.Juodos_raides
+    let antraste = optional_title ? optional_title : "Įveskite antraštę";
+    let spalva = optional_color ? optional_color["Spalva"] : PARAMS.Spalva;
+    let juodos_raides = optional_black_letters ? optional_black_letters.Juodos_raides : PARAMS.Juodos_raides
 
     update_input_element(input_element, antraste, spalva, juodos_raides);
     const folder = pane.addFolder({
@@ -261,15 +261,11 @@ function add_title_pane() {
         antraste = ev.value;
         update_input_element(input_element, antraste, spalva, juodos_raides)
     })
-    folder.addBinding(PARAMS, 'Spalva', {
-        color: {
-            type: 'float'
-        }
-    }).on("change", (ev) => {
+    folder.addBinding(optional_color ? optional_color : PARAMS, 'Spalva').on("change", (ev) => {
         spalva = ev.value;
         update_input_element(input_element, antraste, spalva, juodos_raides)
     });
-    folder.addBinding(PARAMS, 'Juodos_raides').on('change', (ev) => {
+    folder.addBinding(optional_black_letters ? optional_black_letters : PARAMS, 'Juodos_raides').on('change', (ev) => {
         juodos_raides = ev.value;
         update_input_element(input_element, antraste, spalva, juodos_raides)
     });
@@ -280,11 +276,32 @@ function add_title_pane() {
 
 /*EVENT LISTENERS*/
 let product_button = document.getElementById('product_button')
+let productSelect = document.getElementById('products');
 product_button.addEventListener('click', () => {
-    add_product();
+    if (productSelect.value) {
+        add_product();
+    }
 });
 window.addEventListener('load', () => {
-    add_title_pane();
-});
 
+    //loading operations for the editing procedures
+    let selected_products = window.selected_products;
+    let catalog_data = window.catalog_data;
+
+    if (selected_products && catalog_data) {
+        catalog_data.RGB = catalog_data.RGB.split(",");
+        catalog_data.RGB = { Spalva: { r: Number(catalog_data.RGB[0]), g: Number(catalog_data.RGB[1]), b: Number(catalog_data.RGB[2]) } };
+        let black_letters = { Juodos_raides: catalog_data.DARK_LETTERS == "black" ? true : false };
+        console.log(black_letters);
+        add_title_pane(catalog_data.CATALOG_NAME, catalog_data.RGB, black_letters);
+        //load the products into the catalog editor
+        for (let product of selected_products) {
+            add_product(product["PRODUCT_ID"], product["name"]);
+        }
+    }
+    else {
+        add_title_pane();
+    }
+
+});
 

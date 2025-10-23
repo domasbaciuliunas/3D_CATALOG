@@ -122,9 +122,9 @@ async function upload_image(req, res) {
             let new_name = await general_func.retrieve_query("SELECT IMAGE_ID FROM users WHERE ID = ?", [ID]);
             let old_name = req.file.filename;
             //resize the image to 200x200 and save it with the new name
-            await sharp(path.join(__dirname, '../images/active_profiles/', old_name)).resize(300,300).toFile(path.join(__dirname, '../images/active_profiles/', new_name[0]["IMAGE_ID"]));
+            await sharp(path.join(__dirname, '../images/active_profiles/', old_name)).resize(300, 300).toFile(path.join(__dirname, '../images/active_profiles/', new_name[0]["IMAGE_ID"]));
             //create a micro icon
-            await sharp(path.join(__dirname, '../images/active_profiles/', old_name)).resize(80,80).toFile(path.join(__dirname, '../images/active_profiles/micro_icons', new_name[0]["IMAGE_ID"]));
+            await sharp(path.join(__dirname, '../images/active_profiles/', old_name)).resize(80, 80).toFile(path.join(__dirname, '../images/active_profiles/micro_icons', new_name[0]["IMAGE_ID"]));
             //delete the old image
             await fs.unlink(path.join(__dirname, '../images/active_profiles/', old_name)) //
             //rename the image to the one in the database
@@ -201,12 +201,12 @@ const register_post = async (req, res, next) => {
         }
         else {
             //generate a unique profile image
-            let img_name = await general_func.generate_unique_ID((IMAGE_ID)=>general_func.retrieve_query(`SELECT ID FROM users WHERE IMAGE_ID = ?`, [IMAGE_ID]),
+            let img_name = await general_func.generate_unique_ID((IMAGE_ID) => general_func.retrieve_query(`SELECT ID FROM users WHERE IMAGE_ID = ?`, [IMAGE_ID]),
                 () => crypto.randomBytes(64).toString('hex') + '.jpg');
             await general_func.insert_query(`INSERT INTO users (NAME, SURNAME, PASSWORD, EMAIL, BIRTHDAY, COUNTRY_ID, IMAGE_ID) VALUES(?,?,?,?,?,?,?)`,
                 [data_block.name, data_block.surname, data_block.password, data_block.email, data_block.birthday, data_block.country, img_name]);
-            await sharp(path.join(__dirname, '../images/profile.jpg')).resize(300,300).toFile(path.join(__dirname, '../images/active_profiles/', img_name ));
-            await sharp(path.join(__dirname, '../images/profile.jpg')).resize(80,80).toFile(path.join(__dirname, '../images/active_profiles/micro_icons', img_name ));
+            await sharp(path.join(__dirname, '../images/profile.jpg')).resize(300, 300).toFile(path.join(__dirname, '../images/active_profiles/', img_name));
+            await sharp(path.join(__dirname, '../images/profile.jpg')).resize(80, 80).toFile(path.join(__dirname, '../images/active_profiles/micro_icons', img_name));
             res.redirect('/');
         }
     } catch (err) {
@@ -301,10 +301,50 @@ const remove = async (req, res) => {
             res.redirect('/delete');
         }
         else {
+            //delete all catalogs
+            let catalogs = await general_func.retrieve_query(`SELECT CATALOG_ID FROM user_catalogs WHERE USER_ID = ?`, [req.session.ID]);
+            for (let catalog of catalogs) {
+                await general_func.insert_query(`DELETE FROM user_catalogs WHERE CATALOG_ID = ?`, [catalog.CATALOG_ID]);
+                await general_func.insert_query(`DELETE FROM catalog_products WHERE CATALOG_ID = ?`, [catalog.CATALOG_ID]);
+                await general_func.insert_query(`DELETE FROM catalogs WHERE ID = ?`, [catalog.CATALOG_ID]);
+            }
+            //delete all products
+            let products = await general_func.retrieve_query(`SELECT PRODUCT_ID FROM user_products WHERE USER_ID = ?`, [req.session.ID]);
+            for (let product of products) {
+                let ambient_lights = await general_func.retrieve_query(`SELECT AL_ID FROM product_ambient_lights WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                await general_func.insert_query(`DELETE FROM product_ambient_lights WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                for (let al of ambient_lights) {
+                    await general_func.insert_query(`DELETE FROM ambient_lights WHERE id = ?`, [al.AL_ID]);
+                }
+                let interest_points = await general_func.retrieve_query(`SELECT IP_ID FROM product_interest_points WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                await general_func.insert_query(`DELETE FROM product_interest_points WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                for (let ip of interest_points) {
+                    await general_func.insert_query(`DELETE FROM interest_points WHERE id = ?`, [ip.IP_ID]);
+                }
+                let spotlights = await general_func.retrieve_query(`SELECT SPOTLIGHT_ID FROM product_spotlights WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                await general_func.insert_query(`DELETE FROM product_spotlights WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                for (let sp of spotlights) {
+                    await general_func.insert_query(`DELETE FROM spotlights WHERE id = ?`, [sp.SPOTLIGHT_ID]);
+                }
+            }
+            for (let product of products) {
+                await general_func.insert_query(`DELETE FROM user_products WHERE PRODUCT_ID = ?`, [product.PRODUCT_ID]);
+                await general_func.insert_query(`DELETE FROM products WHERE id = ?`, [product.PRODUCT_ID]);
+            }
+            //delete models 
+            let models = await general_func.retrieve_query(`SELECT MODEL_ID FROM users_models WHERE USER_ID = ?`, [req.session.ID]);
+            for (let model of models) {
+                let GLB = await general_func.retrieve_query(`SELECT GLB_ID FROM models WHERE ID = ?`, [model.MODEL_ID]);
+                await fs.unlink(path.join(__dirname, '../GLB_FILES', GLB[0].GLB_ID))
+                await general_func.insert_query(`DELETE FROM users_models WHERE MODEL_ID = ?`, [model.MODEL_ID]);
+                await general_func.insert_query(`DELETE FROM models WHERE ID = ?`, [model.MODEL_ID]);
+            }
+
             //delete the profile image
             let ID = req.session.ID;
             let image_id = await general_func.retrieve_query("SELECT IMAGE_ID FROM users WHERE ID = ?", [ID]);
             await fs.unlink(path.join(__dirname, '../images/active_profiles/', image_id[0]["IMAGE_ID"]));
+            await fs.unlink(path.join(__dirname, '../images/active_profiles/micro_icons', image_id[0]["IMAGE_ID"]));
             //delete the profile
             await general_func.retrieve_query(`DELETE FROM users WHERE users.ID = ?`, [req.session.ID]);
             //delete the session

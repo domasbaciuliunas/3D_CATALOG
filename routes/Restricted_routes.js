@@ -44,4 +44,12 @@ router.get('/catalog/delete/:id', catalogcontroler.delete_catalog);
 router.get('/product/delete/:id', catalogcontroler.delete_product);
 //delete a model
 router.get('/model/delete/:id', catalogcontroler.delete_model);
+//edit a product
+router.get('/product/edit/:id', catalogcontroler.edit_product);
+//edit product post
+router.post('/product/edit/:id', catalogcontroler.edit_product_post);
+//edit a catalog
+router.get('/catalog/edit/:id', catalogcontroler.edit_catalog);
+//edit catalog post
+router.post('/catalog/edit/:id', catalogcontroler.edit_catalog_post);
 module.exports = router;

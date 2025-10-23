@@ -45,7 +45,7 @@ class ambientLight {
 }
 
 class GLB_model {
-  constructor(path, name, y_scale, scene, callback) {
+  constructor(path, name, y_scale, scene, callback, optional_scale) {
     this.scene = scene;
     this.isRemoved = false; // Track if removed before load finishes
     loader.load((path + name), (glb) => {
@@ -74,6 +74,9 @@ class GLB_model {
           child.receiveShadow = true;
         }
       });
+      if (optional_scale) {
+        this.change_size(optional_scale);
+      }
       scene.add(this.glb_scene);
       if (typeof callback === 'function') callback(this.glb_scene);
     });
@@ -127,7 +130,6 @@ class Pointer_Event {
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children, true);
     if (intersects.length > 0) {
-      // find the first intersect that belongs to the loaded model (walk parents)
       const hitIndex = intersects.findIndex((it) => {
         let o = it.object;
         while (o) {
@@ -137,32 +139,32 @@ class Pointer_Event {
         return false;
       });
       if (hitIndex !== -1) {
-        const obj = intersects[hitIndex].object;
-        // use the corresponding point
-        const point = intersects[hitIndex].point;
+        const point = intersects[hitIndex].point.clone();
         point.x = Math.round((point.x + Number.EPSILON) * 100) / 100;
         point.y = Math.round((point.y + Number.EPSILON) * 100) / 100;
         point.z = Math.round((point.z + Number.EPSILON) * 100) / 100;
         this.coordinates = point;
-        // Call the callback function to notify the event
         if (typeof callback === 'function') {
           callback(this.coordinates);
         }
       }
     }
-    // Remove the event listener only after the click has been processed
-    this.renderer.domElement.removeEventListener('click', this._listener);
+
+    // ensure we clear the stored listener reference (listener was added with { once: true } below,
+    // but clear the reference to avoid stale refs and make subsequent logic safe)
+    this._listener = null;
   }
 
   pointer_event(callback) {
     // Remove the previous listener if it exists
     if (this._listener) {
       this.renderer.domElement.removeEventListener('click', this._listener);
+      this._listener = null;
     }
 
-    // Store the new listener function for future removal
+    // Store the new listener function and add it with { once: true } so browser auto-removes it
     this._listener = (event) => this.calculate_position(event, callback);
-    this.renderer.domElement.addEventListener('click', this._listener);
+    this.renderer.domElement.addEventListener('click', this._listener, { once: true });
   }
 
   get_event_coordinates() {
@@ -170,7 +172,10 @@ class Pointer_Event {
   }
 
   removeEventListener() {
-    this.renderer.domElement.removeEventListener('click', this._listener);
+    if (this._listener) {
+      this.renderer.domElement.removeEventListener('click', this._listener);
+      this._listener = null;
+    }
   }
 }
 
@@ -260,9 +265,9 @@ class Editor {
   }
 
   //add GLB model to the scene
-  add_GLB(path, name, y_scale, callback) {
+  add_GLB(path, name, y_scale, callback, optional_scale) {
     this.remove_GLB(); // Always remove previous GLB before loading new one
-    this.glb_model = new GLB_model(path, name, y_scale, this.scene, callback);
+    this.glb_model = new GLB_model(path, name, y_scale, this.scene, callback, optional_scale);
   }
 
   remove_GLB() {
@@ -311,7 +316,9 @@ class BasicEditor extends Editor {
 
   //add a spotlight to the scene
   add_spotlight(color, intensity, distance, angle, penumbra, position, name) {
-    const SpotLight = new spotLight(color, intensity, distance, angle, penumbra, position);
+    console.log(color["Spalva"]);
+    let spotColor = new THREE.Color(`rgb(${Math.floor(color.r)}, ${Math.floor(color.g)}, ${Math.floor(color.b)})`);
+    const SpotLight = new spotLight(spotColor, intensity, distance, angle, penumbra, position);
     SpotLight.add_to_scene(this.scene);
     this.spotlights[`${name}`] = SpotLight;
   }
@@ -328,7 +335,8 @@ class BasicEditor extends Editor {
 
   //change spotlight color
   change_spotlight_color(color, name) {
-    this.spotlights[`${name}`].spotLight.color.setRGB(color.r, color.g, color.b);
+    let spotColor = new THREE.Color(`rgb(${Math.floor(color.r)}, ${Math.floor(color.g)}, ${Math.floor(color.b)})`);
+    this.spotlights[`${name}`].spotLight.color.set(spotColor);
   }
 
   //change spotlight distance
@@ -366,14 +374,16 @@ class BasicEditor extends Editor {
 
   //add ambient light to the scene 
   add_ambient_light(color, intensity, name) {
-    const AmbientLight = new ambientLight(color, intensity);
+    let ambColor = new THREE.Color(`rgb(${color.r}, ${color.g}, ${color.b})`);
+    let AmbientLight = new ambientLight(ambColor, intensity);
     AmbientLight.add_to_scene(this.scene);
     this.ambientLights[`${name}`] = AmbientLight;
   }
 
   //update ambient light color
   change_ambient_light_color(color, name) {
-    this.ambientLights[`${name}`].ambientLight.color.setRGB(color.r, color.g, color.b);
+    let ambColor = new THREE.Color(`rgb(${Math.floor(color.r)}, ${Math.floor(color.g)}, ${Math.floor(color.b)})`);
+    this.ambientLights[`${name}`].ambientLight.color.set(ambColor);
   }
 
   //update ambient light intesity
@@ -469,6 +479,51 @@ class BasicEditor extends Editor {
         }
       }
     });
+  }
+
+  add_interestPoint_at_position(_id, coordinates, state) {
+    // Remove existing point if present
+    if (this.interest_points[_id]) {
+      let existing = this.interest_points[_id];
+      this.scene.remove(existing);
+      existing.material.dispose();
+      this.interest_points[_id] = null;
+    }
+    // Create and add new interest point
+    const question_mark_white = this.textureLoader.load('/images/textures/icons8-question-50.png');
+    const question_mark_black = this.textureLoader.load('/images/textures/icons8-question-50black.png');
+
+    const white_material = new THREE.SpriteMaterial({ map: question_mark_white });
+    const black_material = new THREE.SpriteMaterial({ map: question_mark_black });
+
+    let interest_point;
+    if (state === false) { interest_point = new THREE.Sprite(white_material); }
+    else if (state === true) { interest_point = new THREE.Sprite(black_material); }
+
+    let refrence_size = this.get_size();
+    let original_scale = this.glb_model.get_original_scale();
+
+    //calculated_scale
+    let calculated_scale = (refrence_size.y / original_scale) - (refrence_size.y / original_scale) * 0.3;
+    interest_point.scale.set(calculated_scale, calculated_scale, 1);
+
+    let displacedCoordinates = this.applyDisplacement(coordinates, {
+      distance: 0.3,
+      direction: {
+        x: coordinates.x >= 0 ? 1 : -1,
+        y: coordinates.y >= 0 ? 1 : -1,
+        z: coordinates.z >= 0 ? 1 : -1
+      },
+      scale: 1
+    });
+
+    //sets the camera postion to a variable
+    this.camera_coords = this.camera.position;
+
+    interest_point.position.copy(displacedCoordinates);
+    this.scene.add(interest_point);
+
+    this.interest_points[_id] = interest_point;
   }
 
   //function to delete an interest point
@@ -714,7 +769,8 @@ class CatalogEditor extends Editor {
         const pi = Math.PI;
         let radians = spotlight.angle * (pi / 180);
         let SpotLight = new spotLight("white", spotlight.intensity, spotlight.distance, radians, spotlight.penumbra, spotlight_position);
-        SpotLight.spotLight.color.setRGB(spotlight_colors.r, spotlight_colors.g, spotlight_colors.b);
+        let spotColor = new THREE.Color(`rgb(${spotlight_colors.r}, ${spotlight_colors.g}, ${spotlight_colors.b})`);
+        SpotLight.spotLight.color.set(spotColor);
         SpotLight.add_to_scene(this.scene);
         this.spotlights[`${crypto.randomUUID()}`] = SpotLight;
       }
@@ -727,7 +783,8 @@ class CatalogEditor extends Editor {
         let ambient_light_colors = ambient_light.RGB.split(",");
         ambient_light_colors = { r: Number(ambient_light_colors[0]), g: Number(ambient_light_colors[1]), b: Number(ambient_light_colors[2]) };
         let AmbientLight = new ambientLight("white", ambient_light.intensity);
-        AmbientLight.ambientLight.color.setRGB(ambient_light_colors.r, ambient_light_colors.g, ambient_light_colors.b);
+        let ambColor = new THREE.Color(`rgb(${ambient_light_colors.r}, ${ambient_light_colors.g}, ${ambient_light_colors.b})`);
+        AmbientLight.ambientLight.color.set(ambColor);
         AmbientLight.add_to_scene(this.scene);
         this.ambientLights[`${crypto.randomUUID()}`] = AmbientLight;
       }
