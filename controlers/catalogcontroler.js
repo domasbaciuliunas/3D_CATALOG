@@ -27,13 +27,13 @@ const DASHBOARD_LIMIT = 20;
 //image constants
 
 const MIN_CATALOG_IMG = 1;
-const MAX_CATALOG_IMG = 9;
+const MAX_CATALOG_IMG = 11;
 
 const MIN_MODEL_IMG = 1;
 const MAX_MODEL_IMG = 8;
 
 const MIN_PRODUCT_IMG = 1;
-const MAX_PRODUCT_IMG = 6;
+const MAX_PRODUCT_IMG = 8;
 
 //closure function for validation
 async function validation_closure(req) {
@@ -77,6 +77,29 @@ async function validation_closure(req) {
         data_block.price = req.body.price;
         if (isNaN(Number(data_block.price)) || Number(data_block.price) < 0) {
             error_block.push("price");
+        }
+    }
+    if (req.body.interest_point) {
+        if (Array.isArray(req.body.interest_point)) {
+            for (let ip of req.body.interest_point) {
+                let ip_json = JSON.parse(ip)
+                let text = ip_json["text"];
+                let header = ip_json["header"];
+                if (text == "" || text.length > DESCRIPTION_LENGTH_MAX || text.length < DESCRIPTION_LENGTH_MIN || header == ""
+                    || header.length > TITLE_LENGTH_MAX || header.length < TITLE_LENGTH_MIN) {
+                    error_block.push("interest_point_error");
+                    break;
+                }
+            }
+        }
+        else if (req.body.interest_point) {
+            let ip_json = JSON.parse(req.body.interest_point)
+            let text = ip_json["text"];
+            let header = ip_json["header"];
+            if (text == "" || text.length > DESCRIPTION_LENGTH_MAX || text.length < DESCRIPTION_LENGTH_MIN || header == ""
+                || header.length > TITLE_LENGTH_MAX || header.length < TITLE_LENGTH_MIN) {
+                error_block.push("interest_point_error");
+            }
         }
     }
     //count the tweakpanes
@@ -234,7 +257,7 @@ const edit_catalog_post = async (req, res) => {
         if (error_block.length > 0) {
             req.session.errors = error_block;
             await req.session.save();
-            res.redirect('/catalog/create');
+            res.redirect(`/catalog/edit/${Number(req.params.id)}`);
         }
         else {
             let r = Math.round((Number(data_block.title.r) + Number.EPSILON) * 1000) / 1000;
@@ -646,7 +669,9 @@ const upload_model_post = async (req, res) => {
             error_block.push("empty_file");
         }
         if (error_block.length > 0) {
-            await fs.unlink(path.join(__dirname, '../GLB_FILES', req.file.filename))
+            if (!error_block.includes("empty_file")) {
+                await fs.unlink(path.join(__dirname, '../GLB_FILES', req.file.filename));
+            }
             req.session.errors = null;
             req.session.errors = error_block;
             res.redirect('/model/upload_model');

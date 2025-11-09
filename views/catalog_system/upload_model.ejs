@@ -1,32 +1,42 @@
 <%- include('../partials/head.ejs') %>
 <%- include('../partials/nav.ejs') %>
 
-<section class="container padding-container">
-  <div clas="mb-3">
-    <h3>3D modelio įkėlimas</h3>
-  </div>
-  <form method="POST" enctype='multipart/form-data' action="/model/upload_model">
-    <div>
-      <div class="mb-3">
-        <label for="GLB">Įkelkite GLB failą </label>
-        <input type="file" id="GLB" name="GLB" accept=".glb">
-        <% if (errors && errors.includes("file_size")) { %>
-        <div style="color:red">Failas viršyja dydžio limitą</div>
-        <% } %>
-        <% if (errors && errors.includes("empty_file")) { %>
-        <div style="color:red">Netinkamas įkėlimas</div>
-        <% } %>
-      </div>
-      <div class="mb-3">
-        <label for="name">Įveskite modelio pavadinimą:</label>
-        <input type="text" class="form-control" id="name" name="name" placeholder="Modelio pavadinimas" required>
-        <% if (errors && errors.includes("name")) { %>
-        <div style="color:red">Pavadinimas netinkamas</div>
-        <% } %>
-      </div>
+<body class="d-flex flex-column h-100">
+  <section class="container my-5">
+    <div class="p-5 text-center bg-body-tertiary rounded-3">
+      <h1 class="text-body-emphasis">3D modelio įkėlimas</h1>
+      <p class="lead my-5">
+        Į sistemą galima įkelti tik .GLB formato 3D modelius.
+      </p>
     </div>
-    <input type="submit" class="btn btn-dark" value="Įkelti">
-  </form>
-</section>
+  </section>
 
-<%- include('../partials/footer.ejs') %>
+  <section class="container p-5">
+    <div clas="mb-3">
+      <h3></h3>
+    </div>
+    <form method="POST" enctype='multipart/form-data' action="/model/upload_model">
+      <div>
+        <div class="mb-3">
+          <label for="GLB">Pasirinkite .GLB failą </label>
+          <input type="file" id="GLB" name="GLB" accept=".glb">
+          <% if (errors && errors.includes("file_size")) { %>
+          <div style="color:red">*Failas viršyja dydžio limitą</div>
+          <% } %>
+          <% if (errors && errors.includes("empty_file")) { %>
+          <div style="color:red">*Netinkamas įkėlimas</div>
+          <% } %>
+        </div>
+        <div class="mb-3">
+          <label for="name">Įveskite modelio pavadinimą:</label>
+          <input type="text" class="form-control" id="name" name="name" placeholder="Modelio pavadinimas" required>
+          <% if (errors && errors.includes("name")) { %>
+          <div style="color:red">*Pavadinimas netinkamas</div>
+          <% } %>
+        </div>
+      </div>
+      <input type="submit" class="btn btn-dark form-control" value="Įkelti">
+    </form>
+  </section>
+  <%- include('../partials/footer.ejs') %>
+</body>

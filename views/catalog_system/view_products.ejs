@@ -1,53 +1,64 @@
 <%- include('../partials/head.ejs') %>
 <%- include('../partials/nav.ejs') %>
-<div class="container">
 
-  <!-- Filtravimas -->
-  <div class="my-3 input-group">
-    <button type="button" id="filter_button" class="btn btn-dark">Filtruoti</button>
-    <select name="filter" class="form-control" id="filter">
-      <option value="newest">Naujausi</option>
-      <option value="oldest">Seniausi</option>
-      <option value="a-z">Abėcėlės tvarka (A-Ž)</option>
-      <option value="z-a">Abėcėlės tvarka (Ž-A)</option>
-    </select>
-  </div>
+<body class="d-flex flex-column h-100">
 
-  <%if (errors && errors.includes("PRODUCT_IN_CATALOG")) { %>
-  <span style="color:red">Produktas naudojamas kataloge </span>
-  <% } %>
+  <section class="container my-5">
+    <div class="p-5 text-center bg-body-tertiary rounded-3">
+      <h1 class="text-body-emphasis">Produktų sąrašas</h1>
+      <p class="lead my-5">
+       Čia galite matyti savo sukurtus produktus, skirtus katalogų sudarymui.
+      </p>
+    </div>
+  </section>
 
-  <div class="row row-cols-2 row-cols-md-3 g-4 my-3">
-    <% for(let product of products) { %>
+  <div class="container">
+    <!-- Filtravimas -->
+    <div class="my-3 input-group">
+      <button type="button" id="filter_button" class="btn btn-dark">Filtruoti</button>
+      <select name="filter" class="form-control" id="filter">
+        <option value="newest">Naujausi</option>
+        <option value="oldest">Seniausi</option>
+        <option value="a-z">Abėcėlės tvarka (A-Ž)</option>
+        <option value="z-a">Abėcėlės tvarka (Ž-A)</option>
+      </select>
+    </div>
 
-    <!-- Produktai -->
-    <div class="col">
-      <div class="card">
-        <img src="/images/illustrations/products/<%=product["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
-        <div class="card-body">
-          <div class="row">
-            <div class="col-8">
-              <div style="height: 50px;" class="overflow-auto mb-2">
-                <h6 class="card-title"><%= product["name"] %></h6>
+    <%if (errors && errors.includes("PRODUCT_IN_CATALOG")) { %>
+    <span style="color:red">Produktas naudojamas kataloge </span>
+    <% } %>
+
+    <div class="row row-cols-2 row-cols-md-3 g-4 my-3">
+      <% for(let product of products) { %>
+
+      <!-- Produktai -->
+      <div class="col">
+        <div class="card">
+          <img src="/images/illustrations/products/<%=product["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-8">
+                <div style="height: 50px;" class="overflow-auto mb-2">
+                  <h6 class="card-title"><%= product["name"] %></h6>
+                </div>
+                <div class="dropdown">
+                  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Veiksmas
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/product/edit/<%=product["id"]%>">Redaguoti</a></li>
+                    <li><a class="dropdown-item" href="/product/delete/<%=product["id"]%>">Ištrinti</a></li>
+                  </ul>
+                </div>
               </div>
-              <div class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Veiksmas
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="/product/edit/<%=product["id"]%>">Redaguoti</a></li>
-                  <li><a class="dropdown-item" href="/product/delete/<%=product["id"]%>">Ištrinti</a></li>
-                </ul>
+              <div class="col-4">
+                <img src="/images/active_profiles/micro_icons/<%=product["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
               </div>
-            </div>
-            <div class="col-4">
-              <img src="/images/active_profiles/micro_icons/<%=product["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <%}%>
+      <%}%>
     </div>
 
 <!-- Puslapiavimas-->
@@ -55,26 +66,27 @@
   <ul class="pagination  flex-wrap">
     <li class="page-item">
       <a class="page-link" href="/product/dashboard/0/<%-applied_filter %>" aria-label="Previous">
-    <span aria-hidden="true">&laquo;</span>
-    </a>
-    </li>
-    <% for(let x=0; x< pages; x++) { %>
-    <li class="page-item"><a class="page-link" href="/product/dashboard//<%= x %>/<%-applied_filter %>"><%= x+1 %></a></li>
-    <%} %>
-    <li class="page-item">
-      <a class="page-link" href="/product/dashboard/<%= pages-1 %>/<%-applied_filter %>" aria-label="Next">
-        <span aria-hidden="true">&raquo;</span>
+      <span aria-hidden="true">&laquo;</span>
       </a>
-    </li>
-    </ul>
-    </nav>
-  </div>
-  <%- include('../partials/footer.ejs') %>
-  <script>
-    let filter_button = document.getElementById("filter_button");
-    let select = document.getElementById("filter");
+      </li>
+      <% for(let x=0; x< pages; x++) { %>
+      <li class="page-item"><a class="page-link" href="/product/dashboard/<%= x %>/<%-applied_filter %>"><%= x+1 %></a></li>
+      <%} %>
+      <li class="page-item">
+        <a class="page-link" href="/product/dashboard/<%= pages-1 %>/<%-applied_filter %>" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      </ul>
+      </nav>
+    </div>
+    <%- include('../partials/footer.ejs') %>
+</body>
+<script>
+  let filter_button = document.getElementById("filter_button");
+  let select = document.getElementById("filter");
 
-    filter_button.addEventListener("click", () => {
-      window.location.href = `/product/dashboard/0/${select.value}`;
-    });
-  </script>
+  filter_button.addEventListener("click", () => {
+    window.location.href = `/product/dashboard/0/${select.value}`;
+  });
+</script>

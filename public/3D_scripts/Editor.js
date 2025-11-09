@@ -507,22 +507,10 @@ class BasicEditor extends Editor {
     let calculated_scale = (refrence_size.y / original_scale) - (refrence_size.y / original_scale) * 0.3;
     interest_point.scale.set(calculated_scale, calculated_scale, 1);
 
-    let displacedCoordinates = this.applyDisplacement(coordinates, {
-      distance: 0.3,
-      direction: {
-        x: coordinates.x >= 0 ? 1 : -1,
-        y: coordinates.y >= 0 ? 1 : -1,
-        z: coordinates.z >= 0 ? 1 : -1
-      },
-      scale: 1
-    });
-
     //sets the camera postion to a variable
     this.camera_coords = this.camera.position;
-
-    interest_point.position.copy(displacedCoordinates);
+    interest_point.position.set(coordinates.x, coordinates.y, coordinates.z)
     this.scene.add(interest_point);
-
     this.interest_points[_id] = interest_point;
   }
 

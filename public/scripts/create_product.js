@@ -521,32 +521,6 @@ Interest_button.addEventListener("click", () => {
     create_interest_point(interest_point_panes, interest_point_ids);
 });
 
-if (window.products) {
-    /*LOAD EXISTING DATA FROM THE PRODUCT*/
-    //change the arrow color based on checkbox state
-    if (arrow_checkbox.checked) {
-        editor.change_arrow_color("black");
-    } else {
-        editor.change_arrow_color("white");
-    }
-
-    //change the ip color based on checkbox state
-    if (ip_color.checked) {
-        editor.change_interestpoint_color("black");
-    } else {
-        editor.change_interestpoint_color("white");
-    }
-
-    //change the menu icon color based on checkbox state
-    if (document.getElementById('menu_color').checked) {
-        document.getElementById("open_icon").style.color = "black";
-    } else {
-        document.getElementById("open_icon").style.color = "white";
-    }
-
-    //change the cubemap
-    editor.change_background(background.options[background.selectedIndex].text);
-}
 //loading operations for the editing procedures
 let products = window.products;
 if (products) {
@@ -559,7 +533,6 @@ if (products) {
 
         //load the interest points after the model is loaded
         for (let interest_point of window.interest_points) {
-            console.log(interest_point);
             let ip_coordinates = interest_point.XYZ.split(",");
             interest_point.XYZ = { Koordinatės: { x: Number(ip_coordinates[0]), y: Number(ip_coordinates[1]), z: Number(ip_coordinates[2]) } };
             let camera_coords = interest_point.camera_XYZ.split(",");
@@ -581,5 +554,33 @@ if (products) {
         ambient_light.RGB = { Spalva: { r: Number(ambient_lights[0]), g: Number(ambient_lights[1]), b: Number(ambient_lights[2]) } };
         create_ambient_light(ambient_light_panes, ambient_light_ids, ambient_light.intensity, ambient_light.RGB);
     }
+}
 
+if (window.products) {
+    /*LOAD EXISTING DATA FROM THE PRODUCT*/
+    //change the arrow color based on checkbox state
+    if (arrow_checkbox.checked) {
+        editor.change_arrow_color("black");
+    } else {
+        editor.change_arrow_color("white");
+    }
+
+    //change the ip color based on checkbox state
+    if (ip_color.checked) {
+        ip_color_state = true;
+        editor.change_interestpoint_color("black");
+    } else {
+        ip_color_state = false;
+        editor.change_interestpoint_color("white");
+    }
+
+    //change the menu icon color based on checkbox state
+    if (document.getElementById('menu_color').checked) {
+        document.getElementById("open_icon").style.color = "black";
+    } else {
+        document.getElementById("open_icon").style.color = "white";
+    }
+
+    //change the cubemap
+    editor.change_background(background.options[background.selectedIndex].text);
 }

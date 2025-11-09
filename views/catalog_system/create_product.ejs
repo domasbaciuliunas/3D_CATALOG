@@ -1,102 +1,109 @@
 <%- include('../partials/head.ejs') %>
 <%- include('../partials/nav.ejs') %>
-<section id="main_section" class="container padding-container">
-  <div id="canvas_container">
-    <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon" style="color: #ffffff;"></i>
-  </div>
-  <div id="settings" class="mb-3">
-    <h2>Nustatymai:</h2>
-    <input type="checkbox" id="arrow_color" name="arrow_color" form="editor_form" style="display: inline-block;">
-    <label for="arrow_color">Tamsios rodyklės</label><br>
-    <input type="checkbox" id="ip_color" name="ip_color" form="editor_form" style="display: inline-block;">
-    <label for="ip_color">Tamsūs dėmesio taškai</label><br>
-    <input type="checkbox" onclick="change_icon_color()" id="menu_color" name="menu_color" form="editor_form" style="display: inline-block;">
-    <label for="menu_color">Tamsi meniu ikona</label><br>
-    <input type="checkbox" id="title_color" name="title_color" form="editor_form" style="display: inline-block;">
-    <label for="ip_color">Tamsus pavadinimas</label><br>
-    <%if (errors && errors.includes("scale")) { %>
-    <span style="color:red">*Netinkamas dydis</span>
-    <% } %>
-    <%if (errors && errors.includes("tweakpanes")) { %>
-    <span style="color:red">*Per daug modulių</span>
-    <% } %>
-  </div>
-  <div id="editor_window" class="mb-3">
-    <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'></div>
-  </div>
-  </div>
-  <form id="editor_form" method="POST">
-    <div class="dropdown mb-3">
-      <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-        Pridėti elementą
-      </button>
-      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-        <li id="spotlight"><a class="dropdown-item">Prožektorius</a></li>
-        <li id="ambient"><a class="dropdown-item">Supanti šviesa</a></li>
-        <li id="interest_point"><a class="dropdown-item">Dėmesio taškas</a></li>
-      </ul>
-    </div>
 
-    <div class="mb-3">
-      <label for="models">Pasirinkite modelį:</label>
-      <select name="models" class="form-control" id="models">
-        <option value="" selected disabled hidden>Pasirinkite modelį</option>
-        <% for(let model of models) { %>
-        <option value="<%= model["GLB_ID"]%>"> <%=model["NAME"]%></option>
-        <% } %>
-      </select>
-      <%if (errors && errors.includes("model")) { %>
-      <span style="color:red">Nepasirinktas modelis</span>
+<body class="d-flex flex-column h-100">
+  <section id="main_section" class="container my-5">
+    <div id="canvas_container">
+      <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon" style="color: #ffffff;"></i>
+    </div>
+    <div id="settings" class="mb-3">
+      <h2>Nustatymai:</h2>
+      <input type="checkbox" id="arrow_color" name="arrow_color" form="editor_form" style="display: inline-block;">
+      <label for="arrow_color">Tamsios rodyklės</label><br>
+      <input type="checkbox" id="ip_color" name="ip_color" form="editor_form" style="display: inline-block;">
+      <label for="ip_color">Tamsūs dėmesio taškai</label><br>
+      <input type="checkbox" onclick="change_icon_color()" id="menu_color" name="menu_color" form="editor_form" style="display: inline-block;">
+      <label for="menu_color">Tamsi meniu ikona</label><br>
+      <input type="checkbox" id="title_color" name="title_color" form="editor_form" style="display: inline-block;">
+      <label for="ip_color">Tamsus pavadinimas</label><br>
+      <%if (errors && errors.includes("scale")) { %>
+      <span style="color:red">*Netinkamas dydis</span>
+      <% } %>
+      <%if (errors && errors.includes("tweakpanes")) { %>
+      <span style="color:red">*Per daug modulių</span>
+      <% } %>
+      <% if (errors && errors.includes("interest_point_error")) { %>
+      <span style="color:red">*Dėmesio taškų tekstas netinkamas</span>
       <% } %>
     </div>
-
-    <div class="mb-3">
-      <label for="background">Pasirinkite foną:</label>
-      <select name="background" class="form-control" id="background">
-        <option value="" selected disabled hidden>Pasirinkite foną</option>
-        <% for(let cubemap of cubemaps) { %>
-        <option value="<%=cubemap["id"]%>"> <%=cubemap["cubemap_folder"]%></option>
-        <% } %>
-      </select>
-      <%if (errors && errors.includes("background")) { %>
-      <span style="color:red">Fonas yra netinkamas</span>
-      <% } %>
+    <div id="editor_window" class="mb-3">
+      <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'></div>
     </div>
-
-    <div class="mb-3">
-      <label for="name">Produkto pavadinimas:</label>
-      <input type="text" class="form-control" id="name" name="name">
-      <%if (errors && errors.includes("name")) { %>
-      <span style="color:red">Pavadinimo laukelis yra netinkamas</span>
-      <% } %>
     </div>
-
-    <div class="mb-3">
-      <label for="description">Aprašymas:</label>
-      <textarea id="description" class="form-control" name="description" style="resize: none;"><h4>Pavadinimas</h4><p>Tekstas</p></textarea>
-      <%if (errors && errors.includes("description")) { %>
-      <span style="color:red">Aprašymo laukelis yra netinkamas</span>
-      <% } %>
-    </div>
-
-    <div class="mb-3">
-      <label for="price">Produkto Kaina:</label>
-      <div class="input-group mb-3">
-        <button type="button" id="price_button" class="btn btn-dark">Pridėti</button>
-        <input type="number" class="form-control" id="price" name="price">
+    <form id="editor_form" method="POST">
+      <div class="dropdown mb-3">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+          Pridėti elementą
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+          <li id="spotlight"><a class="dropdown-item">Prožektorius</a></li>
+          <li id="ambient"><a class="dropdown-item">Supanti šviesa</a></li>
+          <li id="interest_point"><a class="dropdown-item">Dėmesio taškas</a></li>
+        </ul>
       </div>
-      <%if (errors && errors.includes("price")) { %>
-      <span style="color:red">Kaina yra netinkama</span>
-      <% } %>
 
-    </div>
-    <input type="hidden" id="scale_form" name="scale_form">
-    <input type="hidden" id="original_scale" name="original_scale">
-    <div>
-      <input type="submit" value="Pateikti" class="form-control btn btn-dark">
-    </div>
-  </form>
-</section>
+      <div class="mb-3">
+        <label for="models">Pasirinkite modelį:</label>
+        <select name="models" class="form-control" id="models">
+          <option value="" selected disabled hidden>Pasirinkite modelį</option>
+          <% for(let model of models) { %>
+          <option value="<%= model["GLB_ID"]%>"> <%=model["NAME"]%></option>
+          <% } %>
+        </select>
+        <%if (errors && errors.includes("model")) { %>
+        <span style="color:red">*Nepasirinktas modelis</span>
+        <% } %>
+      </div>
+
+      <div class="mb-3">
+        <label for="background">Pasirinkite foną:</label>
+        <select name="background" class="form-control" id="background">
+          <option value="" selected disabled hidden>Pasirinkite foną</option>
+          <% for(let cubemap of cubemaps) { %>
+          <option value="<%=cubemap["id"]%>"> <%=cubemap["cubemap_folder"]%></option>
+          <% } %>
+        </select>
+        <%if (errors && errors.includes("background")) { %>
+        <span style="color:red">*Fonas yra netinkamas</span>
+        <% } %>
+      </div>
+
+      <div class="mb-3">
+        <label for="name">Produkto pavadinimas:</label>
+        <input type="text" class="form-control" id="name" name="name">
+        <%if (errors && errors.includes("name")) { %>
+        <span style="color:red">*Pavadinimo laukelis yra netinkamas</span>
+        <% } %>
+      </div>
+
+      <div class="mb-3">
+        <label for="description">Aprašymas:</label>
+        <textarea id="description" class="form-control" name="description" style="resize: none; height: 150px;"><h4>Pavadinimas</h4><p>Tekstas</p></textarea>
+        <%if (errors && errors.includes("description")) { %>
+        <span style="color:red">*Aprašymo laukelis yra netinkamas</span>
+        <% } %>
+      </div>
+
+      <div class="mb-3">
+        <label for="price">Produkto Kaina:</label>
+        <div class="input-group mb-3">
+          <button type="button" id="price_button" class="btn btn-dark">Pridėti</button>
+          <input type="number" class="form-control" id="price" name="price">
+        </div>
+        <%if (errors && errors.includes("price")) { %>
+        <span style="color:red">*Kaina yra netinkama</span>
+        <% } %>
+
+      </div>
+      <input type="hidden" id="scale_form" name="scale_form">
+      <input type="hidden" id="original_scale" name="original_scale">
+      <div>
+        <input type="submit" value="Pateikti" class="form-control btn btn-dark">
+      </div>
+    </form>
+  </section>
+  <%- include('../partials/footer.ejs') %>
+</body>
 <script type="module" src="/3D_scripts/Editor.js"></script>
 <script src="/masonry/masonry.pkgd.min.js"></script>
 <script>
@@ -111,4 +118,3 @@
   }
 </script>
 <script type="module" src="/scripts/create_product.js"></script>
-<%- include('../partials/footer.ejs') %>

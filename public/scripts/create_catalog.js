@@ -229,7 +229,7 @@ document.getElementById('change_button').addEventListener('click', () => {
 
 function add_title_pane(optional_title, optional_color, optional_black_letters) {
     function update_input_element(input_element, antraste, spalva, juodos_raides) {
-        input_element.value = `{"antraste": "${antraste}", "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "juodos_raides": "${juodos_raides}"}`;
+        input_element.value = `{"antraste": "${antraste.replace(/[\\\s]/g, ' ').replace(/"/g, `''`)}", "r": ${spalva.r}, "g": ${spalva.g}, "b": ${spalva.b}, "juodos_raides": "${juodos_raides}"}`;
     }
     //add a tweakpane for the header color
     let settings = document.getElementById("settings_row");
@@ -292,7 +292,6 @@ window.addEventListener('load', () => {
         catalog_data.RGB = catalog_data.RGB.split(",");
         catalog_data.RGB = { Spalva: { r: Number(catalog_data.RGB[0]), g: Number(catalog_data.RGB[1]), b: Number(catalog_data.RGB[2]) } };
         let black_letters = { Juodos_raides: catalog_data.DARK_LETTERS == "black" ? true : false };
-        console.log(black_letters);
         add_title_pane(catalog_data.CATALOG_NAME, catalog_data.RGB, black_letters);
         //load the products into the catalog editor
         for (let product of selected_products) {

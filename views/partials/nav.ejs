@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="/dashboard">
-            <h3>PONDLEAF_</h3>
+              <a class="navbar-brand">Hybrid3D</a>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -10,31 +10,50 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0 nav-font">
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard">PRADŽIA</a>
+                    <a class="nav-link" href="/dashboard">NAUJAUSI KATALOGAI</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/edit">MANO PASKYRA</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        MODELIAI
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/model/dashboard/0/none">Mano modeliai</a></li>
+                        <li><a class="dropdown-item" href="/model/upload_model">Įkelti modelį</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/model/upload_model">UPLOAD</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        PRODUKTAI
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/product/dashboard/0/none">Mano produktai</a></li>
+                        <li><a class="dropdown-item" href="/product/create">Sukurti produktą</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/product/create">CREATE_PRODUCT</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        KATALOGAI
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/catalog/dashboard/0/none">Mano katalogai</a></li>
+                        <li><a class="dropdown-item" href="/catalog/create">Sukurti katalogą</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/catalog/create">CREATE_CATALOG</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/model/dashboard/0/none">MODEL_DASHBOARD</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/product/dashboard/0/none">PRODUCT_DASHBOARD</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/catalog/dashboard/0/none">CATALOG_DASHBOARD</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/logout">ATSIJUNGTI</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        PASKYRA
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/edit">Paskyros nustatymai</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/logout">Atsijungti</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>

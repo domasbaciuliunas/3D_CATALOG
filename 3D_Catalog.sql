@@ -16,29 +16,29 @@
 
 
 -- Dumping database structure for 3d_catalog
-CREATE DATABASE IF NOT EXISTS `3d_catalog` /*!40100 DEFAULT CHARACTER SET utf8mb3 COLLATE utf8mb3_lithuanian_ci */;
+CREATE DATABASE IF NOT EXISTS `3d_catalog` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 USE `3d_catalog`;
 
 -- Dumping structure for table 3d_catalog.ambient_lights
 CREATE TABLE IF NOT EXISTS `ambient_lights` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `intensity` float unsigned DEFAULT NULL,
-  `RGB` varchar(50) DEFAULT NULL,
+  `RGB` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.ambient_lights: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.catalogs
 CREATE TABLE IF NOT EXISTS `catalogs` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `CATALOG_NAME` varchar(50) DEFAULT NULL,
-  `RGB` varchar(50) DEFAULT NULL,
-  `HEADER` varchar(50) DEFAULT NULL,
-  `DARK_LETTERS` varchar(50) DEFAULT NULL,
+  `CATALOG_NAME` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `RGB` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `HEADER` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `DARK_LETTERS` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `ILLUSTRATION` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.catalogs: ~0 rows (approximately)
 
@@ -52,90 +52,17 @@ CREATE TABLE IF NOT EXISTS `catalog_products` (
   KEY `FK_catalog_products_products` (`PRODUCT_ID`),
   CONSTRAINT `FK_catalog_products_catalogs` FOREIGN KEY (`CATALOG_ID`) REFERENCES `catalogs` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_catalog_products_products` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.catalog_products: ~0 rows (approximately)
-
--- Dumping structure for table 3d_catalog.cities
-CREATE TABLE IF NOT EXISTS `cities` (
-  `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `category` enum('Didieji miestai','Kita','Kiti miestai') NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
-
--- Dumping data for table 3d_catalog.cities: ~62 rows (approximately)
-INSERT INTO `cities` (`id`, `name`, `category`) VALUES
-	(1, 'Vilnius', 'Didieji miestai'),
-	(2, 'Kaunas', 'Didieji miestai'),
-	(3, 'Klaipėda', 'Didieji miestai'),
-	(4, 'Šiauliai', 'Didieji miestai'),
-	(5, 'Panevėžys', 'Didieji miestai'),
-	(6, 'Alytus', 'Didieji miestai'),
-	(7, 'Visa Lietuva', 'Kita'),
-	(8, 'Užsienis', 'Kita'),
-	(9, 'Akmenė', 'Kiti miestai'),
-	(10, 'Alytaus r.', 'Kiti miestai'),
-	(11, 'Anykščiai', 'Kiti miestai'),
-	(12, 'Birštonas', 'Kiti miestai'),
-	(13, 'Biržai', 'Kiti miestai'),
-	(14, 'Druskininkai', 'Kiti miestai'),
-	(15, 'Elektrėnai', 'Kiti miestai'),
-	(16, 'Ignalina', 'Kiti miestai'),
-	(17, 'Jonava', 'Kiti miestai'),
-	(18, 'Joniškis', 'Kiti miestai'),
-	(19, 'Jurbarkas', 'Kiti miestai'),
-	(20, 'Kaišiadorys', 'Kiti miestai'),
-	(21, 'Kalvarija', 'Kiti miestai'),
-	(22, 'Kauno r.', 'Kiti miestai'),
-	(23, 'Kazlų Rūda', 'Kiti miestai'),
-	(24, 'Kėdainiai', 'Kiti miestai'),
-	(25, 'Kelmė', 'Kiti miestai'),
-	(26, 'Klaipėdos r.', 'Kiti miestai'),
-	(27, 'Kretinga', 'Kiti miestai'),
-	(28, 'Kupiškis', 'Kiti miestai'),
-	(29, 'Lazdijai', 'Kiti miestai'),
-	(30, 'Marijampolė', 'Kiti miestai'),
-	(31, 'Mažeikiai', 'Kiti miestai'),
-	(32, 'Molėtai', 'Kiti miestai'),
-	(33, 'Neringa', 'Kiti miestai'),
-	(34, 'Pagėgiai', 'Kiti miestai'),
-	(35, 'Pakruojis', 'Kiti miestai'),
-	(36, 'Palanga', 'Kiti miestai'),
-	(37, 'Panevėžio r.', 'Kiti miestai'),
-	(38, 'Pasvalys', 'Kiti miestai'),
-	(39, 'Plungė', 'Kiti miestai'),
-	(40, 'Prienai', 'Kiti miestai'),
-	(41, 'Radviliškis', 'Kiti miestai'),
-	(42, 'Raseiniai', 'Kiti miestai'),
-	(43, 'Rietavas', 'Kiti miestai'),
-	(44, 'Rokiškis', 'Kiti miestai'),
-	(45, 'Šakiai', 'Kiti miestai'),
-	(46, 'Šalčininkai', 'Kiti miestai'),
-	(47, 'Šiaulių r.', 'Kiti miestai'),
-	(48, 'Šilalė', 'Kiti miestai'),
-	(49, 'Šilutė', 'Kiti miestai'),
-	(50, 'Širvintos', 'Kiti miestai'),
-	(51, 'Skuodas', 'Kiti miestai'),
-	(52, 'Švenčioniai', 'Kiti miestai'),
-	(53, 'Tauragė', 'Kiti miestai'),
-	(54, 'Telšiai', 'Kiti miestai'),
-	(55, 'Trakai', 'Kiti miestai'),
-	(56, 'Ukmergė', 'Kiti miestai'),
-	(57, 'Utena', 'Kiti miestai'),
-	(58, 'Varėna', 'Kiti miestai'),
-	(59, 'Vilkaviškis', 'Kiti miestai'),
-	(60, 'Vilniaus r.', 'Kiti miestai'),
-	(61, 'Visaginas', 'Kiti miestai'),
-	(62, 'Zarasai', 'Kiti miestai');
 
 -- Dumping structure for table 3d_catalog.countries
 CREATE TABLE IF NOT EXISTS `countries` (
   `COUNTRY_ID` int(11) NOT NULL AUTO_INCREMENT,
-  `COUNTRY` varchar(50) NOT NULL,
-  `ISO` varchar(4) NOT NULL,
+  `COUNTRY` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
+  `ISO` varchar(4) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
   PRIMARY KEY (`COUNTRY_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.countries: ~194 rows (approximately)
 INSERT INTO `countries` (`COUNTRY_ID`, `COUNTRY`, `ISO`) VALUES
@@ -337,9 +264,9 @@ INSERT INTO `countries` (`COUNTRY_ID`, `COUNTRY`, `ISO`) VALUES
 -- Dumping structure for table 3d_catalog.cubemaps
 CREATE TABLE IF NOT EXISTS `cubemaps` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `cubemap_folder` varchar(50) DEFAULT NULL,
+  `cubemap_folder` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.cubemaps: ~3 rows (approximately)
 INSERT INTO `cubemaps` (`id`, `cubemap_folder`) VALUES
@@ -350,37 +277,37 @@ INSERT INTO `cubemaps` (`id`, `cubemap_folder`) VALUES
 -- Dumping structure for table 3d_catalog.interest_points
 CREATE TABLE IF NOT EXISTS `interest_points` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `XYZ` varchar(50) DEFAULT NULL,
-  `text` varchar(1000) DEFAULT NULL,
-  `header` varchar(50) DEFAULT NULL,
-  `camera_XYZ` varchar(50) DEFAULT NULL,
+  `XYZ` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `text` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `header` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `camera_XYZ` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.interest_points: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.models
 CREATE TABLE IF NOT EXISTS `models` (
   `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `NAME` varchar(50) DEFAULT NULL,
-  `GLB_ID` varchar(150) DEFAULT NULL,
+  `NAME` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `GLB_ID` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `ILLUSTRATION` int(11) DEFAULT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.models: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.products
 CREATE TABLE IF NOT EXISTS `products` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `title_color` varchar(50) DEFAULT NULL,
-  `ip_color` varchar(50) DEFAULT NULL,
-  `arrows` varchar(50) DEFAULT NULL,
-  `menu` varchar(50) DEFAULT NULL,
+  `title_color` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `ip_color` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `arrows` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `menu` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `model_id` int(10) unsigned DEFAULT NULL,
   `cubemap_id` int(11) unsigned NOT NULL,
-  `name` varchar(50) DEFAULT NULL,
-  `description` varchar(1000) DEFAULT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `description` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `price` int(10) unsigned DEFAULT NULL,
   `item_scale` float unsigned NOT NULL,
   `original_scale` float unsigned NOT NULL,
@@ -390,7 +317,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   KEY `FK_products_cubemaps` (`cubemap_id`),
   CONSTRAINT `FK_products_cubemaps` FOREIGN KEY (`cubemap_id`) REFERENCES `cubemaps` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_products_models` FOREIGN KEY (`model_id`) REFERENCES `models` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.products: ~0 rows (approximately)
 
@@ -404,7 +331,7 @@ CREATE TABLE IF NOT EXISTS `product_ambient_lights` (
   KEY `FK_product_ambient_lights_ambient_lights` (`AL_ID`),
   CONSTRAINT `FK_product_ambient_lights_ambient_lights` FOREIGN KEY (`AL_ID`) REFERENCES `ambient_lights` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_product_ambient_lights_products` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.product_ambient_lights: ~0 rows (approximately)
 
@@ -418,7 +345,7 @@ CREATE TABLE IF NOT EXISTS `product_interest_points` (
   KEY `FK_product_interest_points_interest_points` (`IP_ID`),
   CONSTRAINT `FK_product_interest_points_interest_points` FOREIGN KEY (`IP_ID`) REFERENCES `interest_points` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_product_interest_points_products` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.product_interest_points: ~0 rows (approximately)
 
@@ -432,9 +359,9 @@ CREATE TABLE IF NOT EXISTS `product_spotlights` (
   KEY `FK_product_spotlights_spotlights` (`SPOTLIGHT_ID`),
   CONSTRAINT `FK_product_spotlights_products` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_product_spotlights_spotlights` FOREIGN KEY (`SPOTLIGHT_ID`) REFERENCES `spotlights` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table 3d_catalog.product_spotlights: ~1 rows (approximately)
+-- Dumping data for table 3d_catalog.product_spotlights: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.sessions
 CREATE TABLE IF NOT EXISTS `sessions` (
@@ -442,43 +369,40 @@ CREATE TABLE IF NOT EXISTS `sessions` (
   `expires` int(11) unsigned NOT NULL,
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`session_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table 3d_catalog.sessions: ~1 rows (approximately)
+-- Dumping data for table 3d_catalog.sessions: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.spotlights
 CREATE TABLE IF NOT EXISTS `spotlights` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `intensity` float unsigned DEFAULT NULL,
   `distance` float unsigned DEFAULT NULL,
-  `RGB` varchar(50) DEFAULT NULL,
-  `XYZ` varchar(50) DEFAULT NULL,
+  `RGB` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `XYZ` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `penumbra` float DEFAULT NULL,
   `angle` float DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.spotlights: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.users
 CREATE TABLE IF NOT EXISTS `users` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
-  `NAME` varchar(50) NOT NULL,
-  `SURNAME` varchar(50) NOT NULL,
-  `PASSWORD` varchar(255) NOT NULL,
-  `EMAIL` varchar(100) NOT NULL,
+  `NAME` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
+  `SURNAME` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
+  `PASSWORD` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
+  `EMAIL` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci NOT NULL,
   `BIRTHDAY` date NOT NULL,
   `COUNTRY_ID` int(11) NOT NULL,
-  `IMAGE_ID` varchar(150) DEFAULT NULL,
+  `IMAGE_ID` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   PRIMARY KEY (`ID`) USING BTREE,
   KEY `fk_type` (`COUNTRY_ID`) USING BTREE,
   CONSTRAINT `fk_type` FOREIGN KEY (`COUNTRY_ID`) REFERENCES `countries` (`COUNTRY_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table 3d_catalog.users: ~1 rows (approximately)
-INSERT INTO `users` (`ID`, `NAME`, `SURNAME`, `PASSWORD`, `EMAIL`, `BIRTHDAY`, `COUNTRY_ID`, `IMAGE_ID`) VALUES
-	(51, 'Domas', 'bac', '$2b$08$ly7OM6PtrwFi6WHkTVM0HOAmc7AzjDM17SeOORSfAVUwW.JLnlbB6', 'domasbac123@gmail.com', '2025-09-05', 1, 'd1525f94a45350d5b07bf86c8b5da169fa57d0d679e13c7735e7f943c3ec5c43bd3a76f1972da4461a4ac86af1b8fc3e7c492accf9da4bd6c1c618c9fa777a20.jpg'),
-	(53, 'Domas', 'Bačiuliūnas', '$2b$08$p7lYPXALamDgOaWwQkLRlOVdfM/1ViCYU4NEY9GlaNohg/GBi/Yqu', 'domas.baciuliunas@edu.ku.lt', '2002-12-16', 101, '4b1aacb0b7c5b093bcada7702ed98f5b964019f843ea64aee535ea4d9251e776c1c624e09ef07e5e0badba9daaed0eb6b29ed09aba698fe5ff27544ad2ad99a2.jpg');
+-- Dumping data for table 3d_catalog.users: ~0 rows (approximately)
 
 -- Dumping structure for table 3d_catalog.users_models
 CREATE TABLE IF NOT EXISTS `users_models` (
@@ -490,7 +414,7 @@ CREATE TABLE IF NOT EXISTS `users_models` (
   KEY `FK_users_models_users` (`USER_ID`),
   CONSTRAINT `FK_users_models_models` FOREIGN KEY (`MODEL_ID`) REFERENCES `models` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_users_models_users` FOREIGN KEY (`USER_ID`) REFERENCES `users` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.users_models: ~0 rows (approximately)
 
@@ -504,7 +428,7 @@ CREATE TABLE IF NOT EXISTS `user_catalogs` (
   KEY `FK_user_catalogs_catalogs` (`CATALOG_ID`),
   CONSTRAINT `FK_user_catalogs_catalogs` FOREIGN KEY (`CATALOG_ID`) REFERENCES `catalogs` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_user_catalogs_users` FOREIGN KEY (`USER_ID`) REFERENCES `users` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.user_catalogs: ~0 rows (approximately)
 
@@ -518,7 +442,7 @@ CREATE TABLE IF NOT EXISTS `user_products` (
   KEY `FK_user_products_products` (`PRODUCT_ID`),
   CONSTRAINT `FK_user_products_products` FOREIGN KEY (`PRODUCT_ID`) REFERENCES `products` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `FK_user_products_users` FOREIGN KEY (`USER_ID`) REFERENCES `users` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_lithuanian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table 3d_catalog.user_products: ~0 rows (approximately)
 

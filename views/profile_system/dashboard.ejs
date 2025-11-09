@@ -1,37 +1,47 @@
 <%- include('../partials/head.ejs') %>
 <%- include('../partials/nav.ejs') %>
-<div class="container">
 
-  <h1 class="my-3">Naujausi katalogai</h1>
-  <div class="row row-cols-2 row-cols-md-3 g-4 mb-3">
-    <% for(let catalog of catalogs) { %>
-    <!-- Katalogai -->
-    <div class="col">
-      <div class="card">
-        <img src="/images/illustrations/catalogs/<%=catalog["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
-        <div class="card-body">
-          <div class="row">
-            <div class="col-8">
-              <div style="height: 50px;" class="overflow-auto mb-2">
-                <h6 class="card-title"><%= catalog["CATALOG_NAME"] %></h6>
+<body class="d-flex flex-column h-100">
+  <div class="container my-5">
+    <section class="mb-5">
+      <div class="p-5 text-center bg-body-tertiary rounded-3">
+        <h1 class="text-body-emphasis">Naujausi katalogai</h1>
+        <p class="lead my-5">
+          Šiame puslapyje pateikiami naujausi sistemoje sukurti katalogai.
+        </p>
+      </div>
+    </section>
+
+    <div class="row row-cols-2 row-cols-md-3 g-4 mb-3">
+      <% for(let catalog of catalogs) { %>
+      <!-- Katalogai -->
+      <div class="col">
+        <div class="card">
+          <img src="/images/illustrations/catalogs/<%=catalog["ILLUSTRATION"]%>.png" class="card-img-top" alt="ikona.png">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-8">
+                <div style="height: 50px;" class="overflow-auto mb-2">
+                  <h6 class="card-title"><%= catalog["CATALOG_NAME"] %></h6>
+                </div>
+                <div class="dropdown">
+                  <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Veiksmas
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/catalog/created/<%=catalog["id"]%>">Peržvelgti</a></li>
+                  </ul>
+                </div>
               </div>
-              <div class="dropdown">
-                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Veiksmas
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="/catalog/created/<%=catalog["id"]%>">Peržvelgti</a></li>
-                </ul>
+              <div class="col-4">
+                <img src="/images/active_profiles/micro_icons/<%=catalog["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
               </div>
-            </div>
-            <div class="col-4">
-              <img src="/images/active_profiles/micro_icons/<%=catalog["IMAGE_ID"] %>" class="img-fluid" alt="profilis.png">
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <%}%>
+      <%}%>
     </div>
     </div>
   <%- include('../partials/footer.ejs') %>
+</body>

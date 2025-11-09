@@ -1,68 +1,75 @@
 <%- include('../partials/head.ejs') %>
 <%- include('../partials/nav.ejs') %>
-<div id="main_section" class="container padding-container">
-  <div id="canvas_container">
-    <!-- About section -->
-    <div id="about">
-      <i class="fa-solid fa-x fa-xl" id="close_about" style="color: #ffffff;"></i>
-      <h5 id="headers" style="color: #ffffff;"></h5>
-      <div id="paragraphs"></div>
-    </div>
-    <div id="desc">
-      <i class="fa-solid fa-x fa-2xl" id="close_icon" style="color: #ffffff;"></i>
-      <div>
-        <h3>Kaina: </h3>
-      </div>
-    </div>
-    <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon" style="color: #ffffff;"></i>
-  </div>
-  <div id="settings" class="mb-3">
-    <%if (errors && errors.includes("products")) { %>
-    <span style="color:red">*Produktai netinkami</span>
-    <% } %>
-    <h2>Nustatymai:</h2>
-    <div id="editor_window" class="mb-3">
-      <h4>Navigacija: </h4>
-      <div class="input-group mb-3">
-        <select name="navigation" class="form-control" id="navigation"></select>
-        <button type="button" id="navigate_button" class="btn btn-dark">Naviguoti</button>
-      </div>
-      <h4>Pakeisti eilės tvarką: </h4>
-      <div class="input-group mb-3">
-        <select name="items_old" class="form-control" id="items_old"></select>
-        <select name="items_new" class="form-control" id="items_new"></select>
-        <button type="button" id="change_button" class="btn btn-dark">Sukeisti</button>
-      </div>
-      <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'></div>
-    </div>
-  </div>
-  <form id="editor_form" method="POST">
-    <div class="mb-3">
-      <label for="products">Pasirinkite produktą:</label>
-      <div class="input-group mb-3">
-        <select name="products" class="form-control" id="products">
-          <option value="" selected disabled hidden>Pasirinkite produktą</option>
-          <% for(let product of products) { %>
-          <option value="<%=product["id"]%>"> <%=product["name"]%></option>
-          <% } %>
-        </select>
-        <button type="button" id="product_button" class="btn btn-dark">Pridėti</button>
-      </div>
-    </div>
 
-    <div class="mb-3">
-      <label for="catalog_name">Katalogo pavadinimas:</label>
-      <input type="text" class="form-control" id="catalog_name" name="catalog_name">
-      <%if (errors && errors.includes("name")) { %>
-      <span style="color:red">Katalogo pavadinimas netinkamas</span>
+<body class="d-flex flex-column h-100">
+  <div id="main_section" class="container my-5">
+    <div id="canvas_container">
+      <!-- About section -->
+      <div id="about">
+        <i class="fa-solid fa-x fa-xl" id="close_about" style="color: #ffffff;"></i>
+        <h5 id="headers" style="color: #ffffff;"></h5>
+        <div id="paragraphs"></div>
+      </div>
+      <div id="desc">
+        <i class="fa-solid fa-x fa-2xl" id="close_icon" style="color: #ffffff;"></i>
+        <div>
+          <h3>Kaina: </h3>
+        </div>
+      </div>
+      <i class="fa-solid fa-chevron-up fa-2xl" id="open_icon" style="color: #ffffff;"></i>
+    </div>
+    <div id="settings" class="mb-3">
+      <h2>Nustatymai:</h2>
+      <%if (errors && errors.includes("products")) { %>
+      <span style="color:red">*Produktai netinkami</span>
       <% } %>
+      <%if (errors && errors.includes("title")) { %>
+      <span style="color:red">*Antraštė netinkama</span>
+      <% } %>
+      <div id="editor_window" class="mb-3">
+        <h4>Navigacija: </h4>
+        <div class="input-group mb-3">
+          <select name="navigation" class="form-control" id="navigation"></select>
+          <button type="button" id="navigate_button" class="btn btn-dark">Naršyti</button>
+        </div>
+        <h4>Pakeisti eilės tvarką: </h4>
+        <div class="input-group mb-3">
+          <select name="items_old" class="form-control" id="items_old"></select>
+          <select name="items_new" class="form-control" id="items_new"></select>
+          <button type="button" id="change_button" class="btn btn-dark">Sukeisti</button>
+        </div>
+        <div id="settings_row" class="row" data-masonry='{"percentPosition": true }'></div>
+      </div>
     </div>
+    <form id="editor_form" method="POST">
+      <div class="mb-3">
+        <label for="products">Pasirinkite produktą:</label>
+        <div class="input-group mb-3">
+          <select name="products" class="form-control" id="products">
+            <option value="" selected disabled hidden>Pasirinkite produktą</option>
+            <% for(let product of products) { %>
+            <option value="<%=product["id"]%>"> <%=product["name"]%></option>
+            <% } %>
+          </select>
+          <button type="button" id="product_button" class="btn btn-dark">Pridėti</button>
+        </div>
+      </div>
 
-    <div>
-      <input type="submit" value="Pateikti" class="form-control btn btn-dark">
-    </div>
-  </form>
-</div>
+      <div class="mb-3">
+        <label for="catalog_name">Katalogo pavadinimas:</label>
+        <input type="text" class="form-control" id="catalog_name" name="catalog_name">
+        <%if (errors && errors.includes("name")) { %>
+        <span style="color:red">*Katalogo pavadinimas netinkamas</span>
+        <% } %>
+      </div>
+
+      <div>
+        <input type="submit" value="Pateikti" class="form-control btn btn-dark">
+      </div>
+    </form>
+  </div>
+  <%- include('../partials/footer.ejs') %>
+</body>
 <script src="/masonry/masonry.pkgd.min.js"></script>
 <script>
   window.spotlights = JSON.parse(`<%-JSON.stringify(spotlights)%>`);
@@ -73,4 +80,3 @@
   window.keyed_products = JSON.parse(`<%-JSON.stringify(keyed_products)%>`);
 </script>
 <script src="/scripts/create_catalog.js" type="module"></script>
-<%- include('../partials/footer.ejs') %>
