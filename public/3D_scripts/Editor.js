@@ -289,7 +289,7 @@ class BasicEditor extends Editor {
 
   //method to change the size of the GLB
   change_size(size) {
-    let old_size = this.get_size().clone();;
+    let old_size = this.get_size().clone();
     this.glb_model.change_size(size);
     let refrence_size = this.get_size();
     let original_scale = this.glb_model.get_original_scale();
@@ -656,9 +656,11 @@ class CatalogEditor extends Editor {
     this.reconstruct_scene(this.index);
     let parsed_data = window.keyed_products[this.item_array[this.index]["product"]["id"]];
     description_div.innerHTML = parsed_data["description"];
-    let price = document.createElement("h3");
-    price.innerText = 'Kaina: ' + parsed_data["price"] + ' €';
-    description_div.appendChild(price);
+    if (parsed_data["price"]) {
+      let price = document.createElement("h3");
+      price.innerText = 'Kaina: ' + parsed_data["price"] + ' €';
+      description_div.appendChild(price);
+    }
     this.about.style.display = "none";
     description.style.display = 'none';
     open_icon.style.display = 'block';
