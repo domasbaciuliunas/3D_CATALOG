@@ -638,7 +638,12 @@ test.describe.serial('TN_07', () => {
   });
   test.describe.serial('TN_12', () => {
     test('TN_12_1', async ({ page }) => {
-      await login(page);
+      await page.goto('http://localhost:3000/');
+      await page.getByRole('textbox', { name: 'Elektroninis paštas:' }).click();
+      await page.getByRole('textbox', { name: 'Elektroninis paštas:' }).fill('marius@edu.ku.lt');
+      await page.getByRole('textbox', { name: 'Slaptažodis:' }).click();
+      await page.getByRole('textbox', { name: 'Slaptažodis:' }).fill('123456789');
+      await page.getByRole('button', { name: 'Prisijungti' }).click();
 
       await page.getByRole('button', { name: 'PASKYRA' }).click();
       await page.getByRole('link', { name: 'Paskyros nustatymai' }).click();
