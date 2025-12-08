@@ -400,9 +400,11 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`ID`) USING BTREE,
   KEY `fk_type` (`COUNTRY_ID`) USING BTREE,
   CONSTRAINT `fk_type` FOREIGN KEY (`COUNTRY_ID`) REFERENCES `countries` (`COUNTRY_ID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table 3d_catalog.users: ~0 rows (approximately)
+-- Dumping data for table 3d_catalog.users: ~1 rows (approximately)
+INSERT INTO `users` (`ID`, `NAME`, `SURNAME`, `PASSWORD`, `EMAIL`, `BIRTHDAY`, `COUNTRY_ID`, `IMAGE_ID`) VALUES
+	(1, 'admin', 'admin', '$2b$08$NG1mxwQlPT1DS0xtL9tvg.jxyv67sH139kXVjgQdU2Natn37asHMK', 'admin@edu.ku.lt', '2025-12-01', 1, '0960d169a1f279a37417e063998d3878f62fd4f676e4182002942892c6165508baa7511e7a416f9832424ce041132b239e2723d539476702db1e0044a109f15c.jpg');
 
 -- Dumping structure for table 3d_catalog.users_models
 CREATE TABLE IF NOT EXISTS `users_models` (
